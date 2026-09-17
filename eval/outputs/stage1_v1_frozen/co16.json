@@ -1,0 +1,20 @@
+{
+  "id": "co16",
+  "category": "clear_owed_to_user",
+  "input": "library texted: my hold on Piranesi arrived, pickup by closing saturday",
+  "raw": "[{\"commitment_found\": true, \"party\": \"library\", \"party_confidence\": \"high\", \"description\": \"library to pickup Piranesi book\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-08-28\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "library",
+      "party_confidence": "high",
+      "description": "library to pickup Piranesi book",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-28",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    }
+  ],
+  "latency_s": 8.38
+}

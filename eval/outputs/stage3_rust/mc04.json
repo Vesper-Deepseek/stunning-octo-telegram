@@ -1,0 +1,40 @@
+{
+  "id": "mc04",
+  "category": "multi_commitment",
+  "input": "Note to self: return Chloe's umbrella; chase the old letting agent, she still hasn't sent my deposit back (said within 10 days); book the MOT",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "high",
+      "description": "return Chloe's umbrella",
+      "direction": "user_owes",
+      "expected_date": null,
+      "overall_confidence": "high",
+      "party": "Chloe",
+      "party_confidence": "high"
+    },
+    {
+      "commitment_found": true,
+      "date_confidence": "high",
+      "description": "old letting agent to return deposit",
+      "direction": "owed_to_user",
+      "expected_date": "2026-09-04",
+      "overall_confidence": "high",
+      "party": "s",
+      "party_confidence": "high"
+    },
+    {
+      "commitment_found": true,
+      "date_confidence": "high",
+      "description": "book MOT/MER",
+      "direction": "user_owes",
+      "expected_date": null,
+      "overall_confidence": "low",
+      "party": "s",
+      "party_confidence": "high"
+    }
+  ],
+  "latency_s": 49.11
+}

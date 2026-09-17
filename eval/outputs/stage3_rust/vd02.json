@@ -1,0 +1,20 @@
+{
+  "id": "vd02",
+  "category": "vague_or_missing_date",
+  "input": "I need to pay back Elena soon, she's asked twice already and I feel bad",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "high",
+      "description": "pay back Elena",
+      "direction": "user_owes",
+      "expected_date": null,
+      "overall_confidence": "high",
+      "party": "Elena",
+      "party_confidence": "high"
+    }
+  ],
+  "latency_s": 37.12
+}

@@ -1,0 +1,30 @@
+{
+  "id": "co01",
+  "category": "clear_user_owes",
+  "input": "ok fine I'll pay Marcus back the $40 he lent me at the concert, will do it this friday",
+  "raw": "[{\"commitment_found\": true, \"party\": \"Marcus\", \"party_confidence\": \"high\", \"description\": \"repay Marcus $40 loan\", \"direction\": \"user_owes\", \"expected_date\": \"2026-08-28\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}, {\"commitment_found\": true, \"party\": \"Marcus\", \"party_confidence\": \"high\", \"description\": \"Marcus to return $40 loan\", \"direction\": \"owed_to_user\", \"expected_date\": null, \"date_confidence\": \"low\", \"overall_confidence\": \"low\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "Marcus",
+      "party_confidence": "high",
+      "description": "repay Marcus $40 loan",
+      "direction": "user_owes",
+      "expected_date": "2026-08-28",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    },
+    {
+      "commitment_found": true,
+      "party": "Marcus",
+      "party_confidence": "high",
+      "description": "Marcus to return $40 loan",
+      "direction": "owed_to_user",
+      "expected_date": null,
+      "date_confidence": "low",
+      "overall_confidence": "low"
+    }
+  ],
+  "latency_s": 11.32
+}

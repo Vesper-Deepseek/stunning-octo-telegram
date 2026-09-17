@@ -1,0 +1,20 @@
+{
+  "id": "co02",
+  "category": "clear_user_owes",
+  "input": "reminder to self: return Priya's copy of The Dispossessed, she needs it before her exam on Sept 2nd",
+  "raw": "[{\"commitment_found\": true, \"party\": \"Priya\", \"party_confidence\": \"high\", \"description\": \"return copy of The Dispossessed to Priya\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-09-02\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "Priya",
+      "party_confidence": "high",
+      "description": "return copy of The Dispossessed to Priya",
+      "direction": "owed_to_user",
+      "expected_date": "2026-09-02",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    }
+  ],
+  "latency_s": 7.18
+}

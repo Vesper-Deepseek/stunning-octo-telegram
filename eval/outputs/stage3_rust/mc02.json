@@ -1,0 +1,40 @@
+{
+  "id": "mc02",
+  "category": "multi_commitment",
+  "input": "Need to cancel the gym membership before the 1st, also Josh still has my tent, and I owe the vet 45 for Luna's shots",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "low",
+      "description": "cancel gym membership by Sept 1",
+      "direction": "user_owes",
+      "expected_date": null,
+      "overall_confidence": "low",
+      "party": "gym",
+      "party_confidence": "high"
+    },
+    {
+      "commitment_found": true,
+      "date_confidence": "low",
+      "description": "Josh to return my tent",
+      "direction": "owed_to_user",
+      "expected_date": "2026-09-01",
+      "overall_confidence": "low",
+      "party": null,
+      "party_confidence": "low"
+    },
+    {
+      "commitment_found": true,
+      "date_confidence": "low",
+      "description": "pay vet claiming for Luna",
+      "direction": "user_owes",
+      "expected_date": null,
+      "overall_confidence": "low",
+      "party": "vet",
+      "party_confidence": "high"
+    }
+  ],
+  "latency_s": 53.89
+}

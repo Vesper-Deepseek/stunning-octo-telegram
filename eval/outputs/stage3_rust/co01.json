@@ -1,0 +1,20 @@
+{
+  "id": "co01",
+  "category": "clear_user_owes",
+  "input": "ok fine I'll pay Marcus back the $40 he lent me at the concert, will do it this friday",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "high",
+      "description": "repay Marcus $40",
+      "direction": "user_owes",
+      "expected_date": "2026-08-27",
+      "overall_confidence": "high",
+      "party": "Marcus",
+      "party_confidence": "high"
+    }
+  ],
+  "latency_s": 30.64
+}

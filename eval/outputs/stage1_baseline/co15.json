@@ -1,0 +1,20 @@
+{
+  "id": "co15",
+  "category": "clear_owed_to_user",
+  "input": "he knows what he owes me. not letting this one slide",
+  "raw": "[{\"commitment_found\": true, \"party\": null, \"party_confidence\": \"low\", \"description\": \"unnamed person owes user not letting this one slide\", \"direction\": \"owed_to_user\", \"expected_date\": null, \"date_confidence\": \"low\", \"overall_confidence\": \"low\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": null,
+      "party_confidence": "low",
+      "description": "unnamed person owes user not letting this one slide",
+      "direction": "owed_to_user",
+      "expected_date": null,
+      "date_confidence": "low",
+      "overall_confidence": "low"
+    }
+  ],
+  "latency_s": 10.69
+}

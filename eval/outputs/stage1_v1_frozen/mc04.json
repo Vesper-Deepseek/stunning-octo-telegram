@@ -1,0 +1,40 @@
+{
+  "id": "mc04",
+  "category": "multi_commitment",
+  "input": "Note to self: return Chloe's umbrella; chase the old letting agent, she still hasn't sent my deposit back (said within 10 days); book the MOT",
+  "raw": "[{\"commitment_found\": true, \"party\": \"Chloe\", \"party_confidence\": \"high\", \"description\": \"return Chloe's umbrella\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-08-28\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}, {\"commitment_found\": true, \"party\": \"Chloe\", \"party_confidence\": \"high\", \"description\": \"Chloe to send deposit back\", \"direction\": \"user_owes\", \"expected_date\": \"2026-08-28\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}, {\"commitment_found\": true, \"party\": \"Chloe\", \"party_confidence\": \"high\", \"description\": \"Chloe to book MOT\", \"direction\": \"owed_to_user\", \"expected_date\": null, \"date_confidence\": \"low\", \"overall_confidence\": \"low\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "Chloe",
+      "party_confidence": "high",
+      "description": "return Chloe's umbrella",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-28",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    },
+    {
+      "commitment_found": true,
+      "party": "Chloe",
+      "party_confidence": "high",
+      "description": "Chloe to send deposit back",
+      "direction": "user_owes",
+      "expected_date": "2026-08-28",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    },
+    {
+      "commitment_found": true,
+      "party": "Chloe",
+      "party_confidence": "high",
+      "description": "Chloe to book MOT",
+      "direction": "owed_to_user",
+      "expected_date": null,
+      "date_confidence": "low",
+      "overall_confidence": "low"
+    }
+  ],
+  "latency_s": 25.79
+}

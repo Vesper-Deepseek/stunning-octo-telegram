@@ -1,0 +1,20 @@
+{
+  "id": "co08",
+  "category": "clear_user_owes",
+  "input": "electricity bill due end of month, set a reminder or we get cut off again",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "high",
+      "description": "electricity bill due end of month",
+      "direction": "unclear",
+      "expected_date": null,
+      "overall_confidence": "low",
+      "party": "utility company",
+      "party_confidence": "low"
+    }
+  ],
+  "latency_s": 42.42
+}

@@ -1,0 +1,20 @@
+{
+  "id": "ad05",
+  "category": "ambiguous_direction",
+  "input": "said I'd square up eventually lol",
+  "raw": "[{\"commitment_found\": true, \"party\": \"unnamed\", \"party_confidence\": \"low\", \"description\": \"unnamed person to pay eventually\", \"direction\": \"owed_to_user\", \"expected_date\": null, \"date_confidence\": \"low\", \"overall_confidence\": \"low\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "unnamed",
+      "party_confidence": "low",
+      "description": "unnamed person to pay eventually",
+      "direction": "owed_to_user",
+      "expected_date": null,
+      "date_confidence": "low",
+      "overall_confidence": "low"
+    }
+  ],
+  "latency_s": 11.38
+}

@@ -1,0 +1,20 @@
+{
+  "id": "ad04",
+  "category": "ambiguous_direction",
+  "input": "we agreed on the tickets whenever, details TBD",
+  "raw": "[{\"commitment_found\": true, \"party\": null, \"party_confidence\": \"low\", \"description\": \"agree on tickets\", \"direction\": \"unclear\", \"expected_date\": null, \"date_confidence\": \"low\", \"overall_confidence\": \"low\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": null,
+      "party_confidence": "low",
+      "description": "agree on tickets",
+      "direction": "unclear",
+      "expected_date": null,
+      "date_confidence": "low",
+      "overall_confidence": "low"
+    }
+  ],
+  "latency_s": 8.93
+}

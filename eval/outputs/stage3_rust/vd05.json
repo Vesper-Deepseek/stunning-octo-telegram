@@ -1,0 +1,20 @@
+{
+  "id": "vd05",
+  "category": "vague_or_missing_date",
+  "input": "Mira's waiting on my feedback for her portfolio, been sitting on it for days",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "high",
+      "description": "wait on user's portfolio feedback",
+      "direction": "user_owes",
+      "expected_date": null,
+      "overall_confidence": "low",
+      "party": "Mira",
+      "party_confidence": "high"
+    }
+  ],
+  "latency_s": 33.77
+}

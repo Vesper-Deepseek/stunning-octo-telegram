@@ -1,0 +1,20 @@
+{
+  "id": "co12",
+  "category": "clear_owed_to_user",
+  "input": "Ana promised to return my charger when she's back from Lisbon on the 5th",
+  "raw": "[{\"commitment_found\": true, \"party\": \"Ana\", \"party_confidence\": \"high\", \"description\": \"return charger when Ana is back from Lisbon\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-08-05\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "Ana",
+      "party_confidence": "high",
+      "description": "return charger when Ana is back from Lisbon",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-05",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    }
+  ],
+  "latency_s": 12.0
+}

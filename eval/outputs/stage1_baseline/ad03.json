@@ -1,0 +1,20 @@
+{
+  "id": "ad03",
+  "category": "ambiguous_direction",
+  "input": "Alex and I talked about the money thing, should be settled by payday",
+  "raw": "[{\"commitment_found\": true, \"party\": \"Alex\", \"party_confidence\": \"high\", \"description\": \"Alex to settle money with user\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-08-28\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "Alex",
+      "party_confidence": "high",
+      "description": "Alex to settle money with user",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-28",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    }
+  ],
+  "latency_s": 11.12
+}

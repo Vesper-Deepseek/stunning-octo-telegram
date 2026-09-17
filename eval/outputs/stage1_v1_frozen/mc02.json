@@ -1,0 +1,40 @@
+{
+  "id": "mc02",
+  "category": "multi_commitment",
+  "input": "Need to cancel the gym membership before the 1st, also Josh still has my tent, and I owe the vet 45 for Luna's shots",
+  "raw": "[{\"commitment_found\": true, \"party\": \"Josh\", \"party_confidence\": \"high\", \"description\": \"Josh to return tent\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-08-01\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}, {\"commitment_found\": true, \"party\": \"Josh\", \"party_confidence\": \"high\", \"description\": \"Josh to return tent\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-08-01\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}, {\"commitment_found\": true, \"party\": \"Vet\", \"party_confidence\": \"high\", \"description\": \"Vet to return 45 for Luna's shots\", \"direction\": \"owed_to_user\", \"expected_date\": null, \"date_confidence\": \"low\", \"overall_confidence\": \"low\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "Josh",
+      "party_confidence": "high",
+      "description": "Josh to return tent",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-01",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    },
+    {
+      "commitment_found": true,
+      "party": "Josh",
+      "party_confidence": "high",
+      "description": "Josh to return tent",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-01",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    },
+    {
+      "commitment_found": true,
+      "party": "Vet",
+      "party_confidence": "high",
+      "description": "Vet to return 45 for Luna's shots",
+      "direction": "owed_to_user",
+      "expected_date": null,
+      "date_confidence": "low",
+      "overall_confidence": "low"
+    }
+  ],
+  "latency_s": 25.31
+}

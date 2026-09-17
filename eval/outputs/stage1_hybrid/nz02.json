@@ -1,0 +1,9 @@
+{
+  "id": "nz02",
+  "category": "noise",
+  "input": "weather's supposed to be nice this weekend finally",
+  "raw": "[]",
+  "parse_note": "rescored",
+  "preds": [],
+  "latency_s": 0.0
+}

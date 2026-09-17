@@ -1,0 +1,20 @@
+{
+  "id": "co11",
+  "category": "clear_owed_to_user",
+  "input": "@jenny promised the draft chapter would be in my inbox monday morning",
+  "raw": "[{\"commitment_found\": true, \"party\": \"jenny\", \"party_confidence\": \"high\", \"description\": \"draft chapter to be in inbox\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-08-28\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}]",
+  "parse_note": "rescored",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "jenny",
+      "party_confidence": "high",
+      "description": "draft chapter to be in inbox",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-28",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    }
+  ],
+  "latency_s": 0.0
+}

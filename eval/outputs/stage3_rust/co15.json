@@ -1,0 +1,20 @@
+{
+  "id": "co15",
+  "category": "clear_owed_to_user",
+  "input": "he knows what he owes me. not letting this one slide",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "low",
+      "description": "unnamed person owes user not letting the matter slide",
+      "direction": "unclear",
+      "expected_date": null,
+      "overall_confidence": "low",
+      "party": null,
+      "party_confidence": "low"
+    }
+  ],
+  "latency_s": 36.55
+}

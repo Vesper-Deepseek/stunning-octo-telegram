@@ -1,0 +1,9 @@
+{
+  "id": "nz05",
+  "category": "noise",
+  "input": "happy birthday!!! hope you have the best day 🎂🎉",
+  "raw": "[]",
+  "parse_note": "clean",
+  "preds": [],
+  "latency_s": 1.5
+}

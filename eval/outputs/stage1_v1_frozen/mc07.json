@@ -1,0 +1,30 @@
+{
+  "id": "mc07",
+  "category": "multi_commitment",
+  "input": "three things Omar: refund my deposit, send me the signed contract, and I'll drop your keys off monday",
+  "raw": "[{\"commitment_found\": true, \"party\": \"Omar\", \"party_confidence\": \"high\", \"description\": \"refund deposit, send signed contract, drop keys off\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-08-28\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}, {\"commitment_found\": true, \"party\": \"Omar\", \"party_confidence\": \"high\", \"description\": \"Omar to drop keys off\", \"direction\": \"user_owes\", \"expected_date\": \"2026-08-01\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "Omar",
+      "party_confidence": "high",
+      "description": "refund deposit, send signed contract, drop keys off",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-28",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    },
+    {
+      "commitment_found": true,
+      "party": "Omar",
+      "party_confidence": "high",
+      "description": "Omar to drop keys off",
+      "direction": "user_owes",
+      "expected_date": "2026-08-01",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    }
+  ],
+  "latency_s": 28.43
+}

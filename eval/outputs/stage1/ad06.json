@@ -1,0 +1,20 @@
+{
+  "id": "ad06",
+  "category": "ambiguous_direction",
+  "input": "we'll figure out who covers the rest of the bill later, don't worry about it now",
+  "raw": "[{\"commitment_found\": true, \"party\": null, \"party_confidence\": \"low\", \"description\": \"figure out who covers the rest of the bill later\", \"direction\": \"unclear\", \"expected_date\": null, \"date_confidence\": \"low\", \"overall_confidence\": \"low\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": null,
+      "party_confidence": "low",
+      "description": "figure out who covers the rest of the bill later",
+      "direction": "unclear",
+      "expected_date": null,
+      "date_confidence": "low",
+      "overall_confidence": "low"
+    }
+  ],
+  "latency_s": 6.09
+}

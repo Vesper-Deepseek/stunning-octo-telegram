@@ -1,0 +1,20 @@
+{
+  "id": "vd04",
+  "category": "vague_or_missing_date",
+  "input": "landlord wants the rent agreement signed, said ASAP",
+  "raw": "[{\"commitment_found\": true, \"party\": \"landlord\", \"party_confidence\": \"high\", \"description\": \"landlord to sign rent agreement\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-08-27\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "landlord",
+      "party_confidence": "high",
+      "description": "landlord to sign rent agreement",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-27",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    }
+  ],
+  "latency_s": 9.21
+}

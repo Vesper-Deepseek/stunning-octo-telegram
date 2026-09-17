@@ -1,0 +1,20 @@
+{
+  "id": "mc07",
+  "category": "multi_commitment",
+  "input": "three things Omar: refund my deposit, send me the signed contract, and I'll drop your keys off monday",
+  "raw": "[{\"commitment_found\": true, \"party\": \"Omar\", \"party_confidence\": \"high\", \"description\": \"refund deposit, send signed contract, drop keys off Monday\", \"direction\": \"owed_to_user\", \"expected_date\": null, \"date_confidence\": \"low\", \"overall_confidence\": \"high\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "Omar",
+      "party_confidence": "high",
+      "description": "refund deposit, send signed contract, drop keys off Monday",
+      "direction": "owed_to_user",
+      "expected_date": null,
+      "date_confidence": "low",
+      "overall_confidence": "high"
+    }
+  ],
+  "latency_s": 10.29
+}

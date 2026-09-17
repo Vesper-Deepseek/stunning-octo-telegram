@@ -1,0 +1,20 @@
+{
+  "id": "ad02",
+  "category": "ambiguous_direction",
+  "input": "she said she'd sort it out with me later",
+  "raw": "[{\"commitment_found\": true, \"party\": \"she\", \"party_confidence\": \"high\", \"description\": \"she to sort out with user later\", \"direction\": \"owed_to_user\", \"expected_date\": null, \"date_confidence\": \"low\", \"overall_confidence\": \"high\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "she",
+      "party_confidence": "high",
+      "description": "she to sort out with user later",
+      "direction": "owed_to_user",
+      "expected_date": null,
+      "date_confidence": "low",
+      "overall_confidence": "high"
+    }
+  ],
+  "latency_s": 10.0
+}

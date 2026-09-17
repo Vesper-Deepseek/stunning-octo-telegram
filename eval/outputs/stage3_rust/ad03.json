@@ -1,0 +1,20 @@
+{
+  "id": "ad03",
+  "category": "ambiguous_direction",
+  "input": "Alex and I talked about the money thing, should be settled by payday",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "low",
+      "description": "Alex needs to pay last paycheck on money thing",
+      "direction": "unclear",
+      "expected_date": null,
+      "overall_confidence": "low",
+      "party": "Alex",
+      "party_confidence": "high"
+    }
+  ],
+  "latency_s": 40.67
+}

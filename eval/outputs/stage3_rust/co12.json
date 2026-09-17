@@ -1,0 +1,20 @@
+{
+  "id": "co12",
+  "category": "clear_owed_to_user",
+  "input": "Ana promised to return my charger when she's back from Lisbon on the 5th",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "low",
+      "description": "return charger",
+      "direction": "unclear",
+      "expected_date": "2026-08-05",
+      "overall_confidence": "low",
+      "party": "Ana",
+      "party_confidence": "high"
+    }
+  ],
+  "latency_s": 38.21
+}

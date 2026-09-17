@@ -1,0 +1,20 @@
+{
+  "id": "ad05",
+  "category": "ambiguous_direction",
+  "input": "said I'd square up eventually lol",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "low",
+      "description": "be paid eventually",
+      "direction": "unclear",
+      "expected_date": null,
+      "overall_confidence": "low",
+      "party": "user",
+      "party_confidence": "low"
+    }
+  ],
+  "latency_s": 45.83
+}

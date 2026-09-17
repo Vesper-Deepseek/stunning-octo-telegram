@@ -1,0 +1,30 @@
+{
+  "id": "mc01",
+  "category": "multi_commitment",
+  "input": "ok so: pay back Lena the 20 euros by thursday, and remind Marco to send me the receipt from the hotel",
+  "raw": "[{\"commitment_found\": true, \"party\": \"Lena\", \"party_confidence\": \"high\", \"description\": \"pay back Lena 20 euros\", \"direction\": \"user_owes\", \"expected_date\": \"2026-08-24\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}, {\"commitment_found\": true, \"party\": \"Marco\", \"party_confidence\": \"high\", \"description\": \"Marco to send receipt\", \"direction\": \"owed_to_user\", \"expected_date\": null, \"date_confidence\": \"low\", \"overall_confidence\": \"low\"}]",
+  "parse_note": "rescored",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "Lena",
+      "party_confidence": "high",
+      "description": "pay back Lena 20 euros",
+      "direction": "user_owes",
+      "expected_date": "2026-08-24",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    },
+    {
+      "commitment_found": true,
+      "party": "Marco",
+      "party_confidence": "high",
+      "description": "Marco to send receipt",
+      "direction": "owed_to_user",
+      "expected_date": null,
+      "date_confidence": "low",
+      "overall_confidence": "low"
+    }
+  ],
+  "latency_s": 0.0
+}

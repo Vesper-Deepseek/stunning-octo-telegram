@@ -1,0 +1,40 @@
+{
+  "id": "mc07",
+  "category": "multi_commitment",
+  "input": "three things Omar: refund my deposit, send me the signed contract, and I'll drop your keys off monday",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "high",
+      "description": "refund deposit, send signed contract, drop keys off Monday",
+      "direction": "user_owes",
+      "expected_date": null,
+      "overall_confidence": "low",
+      "party": "Omar",
+      "party_confidence": "high"
+    },
+    {
+      "commitment_found": true,
+      "date_confidence": "high",
+      "description": "drop Omar's keys off Monday",
+      "direction": "user_owes",
+      "expected_date": null,
+      "overall_confidence": "low",
+      "party": "me",
+      "party_confidence": "high"
+    },
+    {
+      "commitment_found": true,
+      "date_confidence": "high",
+      "description": "Omar to refund deposit/sign contract",
+      "direction": "unclear",
+      "expected_date": null,
+      "overall_confidence": "low",
+      "party": "me",
+      "party_confidence": "high"
+    }
+  ],
+  "latency_s": 49.99
+}

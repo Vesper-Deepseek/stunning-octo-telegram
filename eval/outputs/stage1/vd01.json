@@ -1,0 +1,20 @@
+{
+  "id": "vd01",
+  "category": "vague_or_missing_date",
+  "input": "owe my sister a call sometime this week, it's been ages",
+  "raw": "[{\"commitment_found\": true, \"party\": \"my sister\", \"party_confidence\": \"high\", \"description\": \"call my sister\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-08-28\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "my sister",
+      "party_confidence": "high",
+      "description": "call my sister",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-28",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    }
+  ],
+  "latency_s": 6.53
+}

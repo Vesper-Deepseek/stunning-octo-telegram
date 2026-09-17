@@ -1,0 +1,20 @@
+{
+  "id": "mc05",
+  "category": "multi_commitment",
+  "input": "told Dana I'd water her plants while she's away, and she promised to bring me back real maple syrup from Canada",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "low",
+      "description": "bring real maple syrup back",
+      "direction": "owed_to_user",
+      "expected_date": null,
+      "overall_confidence": "low",
+      "party": "Dana",
+      "party_confidence": "high"
+    }
+  ],
+  "latency_s": 46.34
+}

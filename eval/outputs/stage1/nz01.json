@@ -1,0 +1,9 @@
+{
+  "id": "nz01",
+  "category": "noise",
+  "input": "lol that meme killed me 😂😂😂",
+  "raw": "[]",
+  "parse_note": "clean",
+  "preds": [],
+  "latency_s": 0.88
+}

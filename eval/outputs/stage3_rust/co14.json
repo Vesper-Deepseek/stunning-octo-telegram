@@ -1,0 +1,20 @@
+{
+  "id": "co14",
+  "category": "clear_owed_to_user",
+  "input": "the garage was supposed to have my car ready tuesday and still nothing",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "high",
+      "description": "garage to have car ready",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-11",
+      "overall_confidence": "high",
+      "party": "garage",
+      "party_confidence": "high"
+    }
+  ],
+  "latency_s": 46.68
+}

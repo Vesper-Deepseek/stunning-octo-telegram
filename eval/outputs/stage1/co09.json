@@ -1,0 +1,20 @@
+{
+  "id": "co09",
+  "category": "clear_owed_to_user",
+  "input": "Nadia said she'll send me the photos from the trip by tomorrow!!",
+  "raw": "[{\"commitment_found\": true, \"party\": \"Nadia\", \"party_confidence\": \"high\", \"description\": \"send photos from trip\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-08-27\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "Nadia",
+      "party_confidence": "high",
+      "description": "send photos from trip",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-27",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    }
+  ],
+  "latency_s": 6.59
+}

@@ -1,0 +1,20 @@
+{
+  "id": "co02",
+  "category": "clear_user_owes",
+  "input": "reminder to self: return Priya's copy of The Dispossessed, she needs it before her exam on Sept 2nd",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "low",
+      "description": "return copy of The Dispossended to Priya",
+      "direction": "user_owes",
+      "expected_date": "2026-09-02",
+      "overall_confidence": "low",
+      "party": "Priya",
+      "party_confidence": "high"
+    }
+  ],
+  "latency_s": 33.29
+}

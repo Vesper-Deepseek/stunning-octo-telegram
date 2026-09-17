@@ -1,0 +1,30 @@
+{
+  "id": "mc05",
+  "category": "multi_commitment",
+  "input": "told Dana I'd water her plants while she's away, and she promised to bring me back real maple syrup from Canada",
+  "raw": "[{\"commitment_found\": true, \"party\": \"Dana\", \"party_confidence\": \"high\", \"description\": \"bring back real maple syrup from Canada\", \"direction\": \"owed_to_user\", \"expected_date\": null, \"date_confidence\": \"low\", \"overall_confidence\": \"low\"}, {\"commitment_found\": true, \"party\": \"Dana\", \"party_confidence\": \"high\", \"description\": \"water plants while away\", \"direction\": \"user_owes\", \"expected_date\": null, \"date_confidence\": \"low\", \"overall_confidence\": \"low\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "Dana",
+      "party_confidence": "high",
+      "description": "bring back real maple syrup from Canada",
+      "direction": "owed_to_user",
+      "expected_date": null,
+      "date_confidence": "low",
+      "overall_confidence": "low"
+    },
+    {
+      "commitment_found": true,
+      "party": "Dana",
+      "party_confidence": "high",
+      "description": "water plants while away",
+      "direction": "user_owes",
+      "expected_date": null,
+      "date_confidence": "low",
+      "overall_confidence": "low"
+    }
+  ],
+  "latency_s": 16.73
+}

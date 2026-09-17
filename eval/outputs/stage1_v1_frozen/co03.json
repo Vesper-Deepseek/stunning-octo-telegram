@@ -1,0 +1,20 @@
+{
+  "id": "co03",
+  "category": "clear_user_owes",
+  "input": "told the landlord I'd send the water bill by the 30th",
+  "raw": "[{\"commitment_found\": true, \"party\": \"landlord\", \"party_confidence\": \"high\", \"description\": \"send water bill by 30th\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-08-30\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "landlord",
+      "party_confidence": "high",
+      "description": "send water bill by 30th",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-30",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    }
+  ],
+  "latency_s": 10.74
+}

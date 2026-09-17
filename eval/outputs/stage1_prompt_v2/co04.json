@@ -1,0 +1,20 @@
+{
+  "id": "co04",
+  "category": "clear_user_owes",
+  "input": "promised prof. Okafor the revised lit review by tomorrow morning, must finish tonight",
+  "raw": "[{\"commitment_found\": true, \"party\": \"prof. Okafor\", \"party_confidence\": \"high\", \"description\": \"submit lit review\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-08-27\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "prof. Okafor",
+      "party_confidence": "high",
+      "description": "submit lit review",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-27",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    }
+  ],
+  "latency_s": 18.13
+}

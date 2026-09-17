@@ -1,0 +1,40 @@
+{
+  "id": "mc03",
+  "category": "multi_commitment",
+  "input": "send Ingrid the signed form tomorrow + chase UPS about where my package is + mum wants the photos from sunday",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "high",
+      "description": "send signed form to Ingrid tomorrow",
+      "direction": "user_owes",
+      "expected_date": "2026-08-26",
+      "overall_confidence": "high",
+      "party": "Ingrid",
+      "party_confidence": "high"
+    },
+    {
+      "commitment_found": true,
+      "date_confidence": "high",
+      "description": "chase status on UPS for my package",
+      "direction": "owed_to_user",
+      "expected_date": null,
+      "overall_confidence": "high",
+      "party": "UPS",
+      "party_confidence": "high"
+    },
+    {
+      "commitment_found": true,
+      "date_confidence": "high",
+      "description": "mum to send photos from Sunday",
+      "direction": "user_owes",
+      "expected_date": null,
+      "overall_confidence": "low",
+      "party": "mum",
+      "party_confidence": "high"
+    }
+  ],
+  "latency_s": 51.48
+}

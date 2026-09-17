@@ -1,0 +1,20 @@
+{
+  "id": "co07",
+  "category": "clear_user_owes",
+  "input": "must drop off Jules' drill on sunday, it's been in my hallway forever",
+  "raw": "[{\"commitment_found\": true, \"party\": \"Jules\", \"party_confidence\": \"high\", \"description\": \"drop off drill\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-08-28\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}]",
+  "parse_note": "rescored",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "Jules",
+      "party_confidence": "high",
+      "description": "drop off drill",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-28",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    }
+  ],
+  "latency_s": 0.0
+}

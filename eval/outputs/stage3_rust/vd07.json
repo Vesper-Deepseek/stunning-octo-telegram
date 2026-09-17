@@ -1,0 +1,20 @@
+{
+  "id": "vd07",
+  "category": "vague_or_missing_date",
+  "input": "should really get around to reimbursing Felix for the hotel already",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "low",
+      "description": "repay Felix for hotel",
+      "direction": "unclear",
+      "expected_date": null,
+      "overall_confidence": "low",
+      "party": "Felix",
+      "party_confidence": "high"
+    }
+  ],
+  "latency_s": 44.73
+}

@@ -1,0 +1,30 @@
+{
+  "id": "mc06",
+  "category": "multi_commitment",
+  "input": "pay the sitter friday like agreed, and she STILL hasn't given me the kids' schedule",
+  "raw": "[{\"commitment_found\": true, \"party\": \"Sitter\", \"party_confidence\": \"high\", \"description\": \"pay sitter on Friday\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-08-28\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}, {\"commitment_found\": true, \"party\": \"Sitter\", \"party_confidence\": \"high\", \"description\": \"Sitter to give kids' schedule\", \"direction\": \"user_owes\", \"expected_date\": null, \"date_confidence\": \"low\", \"overall_confidence\": \"low\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "Sitter",
+      "party_confidence": "high",
+      "description": "pay sitter on Friday",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-28",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    },
+    {
+      "commitment_found": true,
+      "party": "Sitter",
+      "party_confidence": "high",
+      "description": "Sitter to give kids' schedule",
+      "direction": "user_owes",
+      "expected_date": null,
+      "date_confidence": "low",
+      "overall_confidence": "low"
+    }
+  ],
+  "latency_s": 23.61
+}

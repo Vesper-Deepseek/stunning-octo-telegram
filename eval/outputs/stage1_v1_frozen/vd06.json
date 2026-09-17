@@ -1,0 +1,20 @@
+{
+  "id": "vd06",
+  "category": "vague_or_missing_date",
+  "input": "I keep forgetting to give Ben his birthday present, it's been sat here for weeks",
+  "raw": "[{\"commitment_found\": true, \"party\": \"Ben\", \"party_confidence\": \"high\", \"description\": \"Ben to receive birthday present\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-08-26\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "Ben",
+      "party_confidence": "high",
+      "description": "Ben to receive birthday present",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-26",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    }
+  ],
+  "latency_s": 11.98
+}

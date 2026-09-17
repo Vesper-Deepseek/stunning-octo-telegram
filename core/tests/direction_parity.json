@@ -1,0 +1,504 @@
+{
+ "generated_by": "eval direction_rules.py",
+ "n": 42,
+ "ok": 35,
+ "unclear": 7,
+ "cases": [
+  {
+   "id": "co01",
+   "input": "ok fine I'll pay Marcus back the $40 he lent me at the concert, will do it this friday",
+   "tokens": [
+    "40",
+    "back",
+    "concert",
+    "from",
+    "loan",
+    "marcus",
+    "pay"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "co02",
+   "input": "reminder to self: return Priya's copy of The Dispossessed, she needs it before her exam on Sept 2nd",
+   "tokens": [
+    "before",
+    "copy",
+    "dispossessed",
+    "exam",
+    "her",
+    "of",
+    "priya's",
+    "return",
+    "the"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "co03",
+   "input": "told the landlord I'd send the water bill by the 30th",
+   "tokens": [
+    "bill",
+    "landlord",
+    "send",
+    "the",
+    "water"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "co04",
+   "input": "promised prof. Okafor the revised lit review by tomorrow morning, must finish tonight",
+   "tokens": [
+    "lit",
+    "okafor",
+    "prof",
+    "review",
+    "revised",
+    "send",
+    "the"
+   ],
+   "expected": "unclear"
+  },
+  {
+   "id": "co05",
+   "input": "need to book the table for mom's birthday dinner on saturday, she keeps asking if I did it yet",
+   "tokens": [
+    "birthday",
+    "book",
+    "dinner",
+    "for",
+    "mom's",
+    "table"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "co06",
+   "input": "I still owe Dave 15 quid for pizza night lol",
+   "tokens": [
+    "15",
+    "dave",
+    "for",
+    "night",
+    "owe",
+    "pizza"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "co07",
+   "input": "must drop off Jules' drill on sunday, it's been in my hallway forever",
+   "tokens": [
+    "drill",
+    "jules'",
+    "return"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "co08",
+   "input": "electricity bill due end of month, set a reminder or we get cut off again",
+   "tokens": [
+    "bill",
+    "electricity",
+    "pay"
+   ],
+   "expected": "unclear"
+  },
+  {
+   "id": "co09",
+   "input": "Nadia said she'll send me the photos from the trip by tomorrow!!",
+   "tokens": [
+    "nadia",
+    "photos",
+    "send",
+    "to",
+    "trip"
+   ],
+   "expected": "owed_to_user"
+  },
+  {
+   "id": "co10",
+   "input": "still waiting on Tomas to pay me back for the tickets, he said end of month",
+   "tokens": [
+    "money",
+    "repay",
+    "ticket",
+    "to",
+    "tomas"
+   ],
+   "expected": "owed_to_user"
+  },
+  {
+   "id": "co11",
+   "input": "@jenny promised the draft chapter would be in my inbox monday morning",
+   "tokens": [
+    "chapter",
+    "draft",
+    "jenny",
+    "send",
+    "to"
+   ],
+   "expected": "unclear"
+  },
+  {
+   "id": "co12",
+   "input": "Ana promised to return my charger when she's back from Lisbon on the 5th",
+   "tokens": [
+    "after",
+    "ana",
+    "charger",
+    "lisbon",
+    "return",
+    "to"
+   ],
+   "expected": "unclear"
+  },
+  {
+   "id": "co13",
+   "input": "Dad still hasn't sent me the flight confirmation, keeps saying tonight, tonight",
+   "tokens": [
+    "confirmation",
+    "dad",
+    "flight",
+    "send",
+    "to"
+   ],
+   "expected": "owed_to_user"
+  },
+  {
+   "id": "co14",
+   "input": "the garage was supposed to have my car ready tuesday and still nothing",
+   "tokens": [
+    "car",
+    "finish",
+    "garage",
+    "repair",
+    "to"
+   ],
+   "expected": "owed_to_user"
+  },
+  {
+   "id": "co15",
+   "input": "he knows what he owes me. not letting this one slide",
+   "tokens": [
+    "favor",
+    "money",
+    "owes",
+    "person",
+    "unnamed",
+    "user"
+   ],
+   "expected": "owed_to_user"
+  },
+  {
+   "id": "co16",
+   "input": "library texted: my hold on Piranesi arrived, pickup by closing saturday",
+   "tokens": [
+    "for",
+    "holding",
+    "library",
+    "pickup",
+    "piranesi",
+    "user"
+   ],
+   "expected": "unclear"
+  },
+  {
+   "id": "vd01",
+   "input": "owe my sister a call sometime this week, it's been ages",
+   "tokens": [
+    "call",
+    "sister"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "vd02",
+   "input": "I need to pay back Elena soon, she's asked twice already and I feel bad",
+   "tokens": [
+    "elena",
+    "repay"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "vd03",
+   "input": "promised Ravi the lecture notes, will send them when I get a chance",
+   "tokens": [
+    "lecture",
+    "notes",
+    "ravi",
+    "send"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "vd04",
+   "input": "landlord wants the rent agreement signed, said ASAP",
+   "tokens": [
+    "agreement",
+    "and",
+    "rent",
+    "return",
+    "sign"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "vd05",
+   "input": "Mira's waiting on my feedback for her portfolio, been sitting on it for days",
+   "tokens": [
+    "feedback",
+    "give",
+    "mira",
+    "portfolio"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "vd06",
+   "input": "I keep forgetting to give Ben his birthday present, it's been sat here for weeks",
+   "tokens": [
+    "ben",
+    "birthday",
+    "give",
+    "present"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "vd07",
+   "input": "should really get around to reimbursing Felix for the hotel already",
+   "tokens": [
+    "felix",
+    "for",
+    "hotel",
+    "reimburse"
+   ],
+   "expected": "unclear"
+  },
+  {
+   "id": "vd08",
+   "input": "Kwame owes me sixty bucks from the cabin trip, said he'd sort it soon",
+   "tokens": [
+    "60",
+    "cabin",
+    "from",
+    "kwame",
+    "repay",
+    "to",
+    "trip"
+   ],
+   "expected": "owed_to_user"
+  },
+  {
+   "id": "mc01",
+   "input": "ok so: pay back Lena the 20 euros by thursday, and remind Marco to send me the receipt from the hotel",
+   "tokens": [
+    "20",
+    "euros",
+    "lena",
+    "repay"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "mc01",
+   "input": "ok so: pay back Lena the 20 euros by thursday, and remind Marco to send me the receipt from the hotel",
+   "tokens": [
+    "hotel",
+    "marco",
+    "receipt",
+    "send",
+    "to"
+   ],
+   "expected": "owed_to_user"
+  },
+  {
+   "id": "mc02",
+   "input": "Need to cancel the gym membership before the 1st, also Josh still has my tent, and I owe the vet 45 for Luna's shots",
+   "tokens": [
+    "cancel",
+    "gym",
+    "membership"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "mc02",
+   "input": "Need to cancel the gym membership before the 1st, also Josh still has my tent, and I owe the vet 45 for Luna's shots",
+   "tokens": [
+    "josh",
+    "return",
+    "tent",
+    "to"
+   ],
+   "expected": "owed_to_user"
+  },
+  {
+   "id": "mc02",
+   "input": "Need to cancel the gym membership before the 1st, also Josh still has my tent, and I owe the vet 45 for Luna's shots",
+   "tokens": [
+    "45",
+    "for",
+    "luna's",
+    "pay",
+    "shots",
+    "vet"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "mc03",
+   "input": "send Ingrid the signed form tomorrow + chase UPS about where my package is + mum wants the photos from sunday",
+   "tokens": [
+    "form",
+    "ingrid",
+    "send",
+    "signed"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "mc03",
+   "input": "send Ingrid the signed form tomorrow + chase UPS about where my package is + mum wants the photos from sunday",
+   "tokens": [
+    "package",
+    "resolve",
+    "to",
+    "ups",
+    "whereabouts"
+   ],
+   "expected": "owed_to_user"
+  },
+  {
+   "id": "mc03",
+   "input": "send Ingrid the signed form tomorrow + chase UPS about where my package is + mum wants the photos from sunday",
+   "tokens": [
+    "mum",
+    "photos",
+    "send",
+    "sunday"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "mc04",
+   "input": "Note to self: return Chloe's umbrella; chase the old letting agent, she still hasn't sent my deposit back (said within 10 days); book the MOT",
+   "tokens": [
+    "chloe's",
+    "return",
+    "umbrella"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "mc04",
+   "input": "Note to self: return Chloe's umbrella; chase the old letting agent, she still hasn't sent my deposit back (said within 10 days); book the MOT",
+   "tokens": [
+    "agent",
+    "deposit",
+    "letting",
+    "return",
+    "to"
+   ],
+   "expected": "owed_to_user"
+  },
+  {
+   "id": "mc04",
+   "input": "Note to self: return Chloe's umbrella; chase the old letting agent, she still hasn't sent my deposit back (said within 10 days); book the MOT",
+   "tokens": [
+    "book",
+    "car",
+    "mot"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "mc05",
+   "input": "told Dana I'd water her plants while she's away, and she promised to bring me back real maple syrup from Canada",
+   "tokens": [
+    "away",
+    "dana's",
+    "plants",
+    "water",
+    "while"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "mc05",
+   "input": "told Dana I'd water her plants while she's away, and she promised to bring me back real maple syrup from Canada",
+   "tokens": [
+    "bring",
+    "canada",
+    "dana",
+    "from",
+    "maple",
+    "syrup",
+    "to"
+   ],
+   "expected": "owed_to_user"
+  },
+  {
+   "id": "mc06",
+   "input": "pay the sitter friday like agreed, and she STILL hasn't given me the kids' schedule",
+   "tokens": [
+    "agreed",
+    "as",
+    "pay",
+    "sitter"
+   ],
+   "expected": "user_owes"
+  },
+  {
+   "id": "mc06",
+   "input": "pay the sitter friday like agreed, and she STILL hasn't given me the kids' schedule",
+   "tokens": [
+    "kids'",
+    "provide",
+    "schedule",
+    "sitter",
+    "to"
+   ],
+   "expected": "owed_to_user"
+  },
+  {
+   "id": "mc07",
+   "input": "three things Omar: refund my deposit, send me the signed contract, and I'll drop your keys off monday",
+   "tokens": [
+    "deposit",
+    "omar",
+    "refund",
+    "to"
+   ],
+   "expected": "unclear"
+  },
+  {
+   "id": "mc07",
+   "input": "three things Omar: refund my deposit, send me the signed contract, and I'll drop your keys off monday",
+   "tokens": [
+    "contract",
+    "omar",
+    "send",
+    "signed",
+    "to"
+   ],
+   "expected": "owed_to_user"
+  },
+  {
+   "id": "mc07",
+   "input": "three things Omar: refund my deposit, send me the signed contract, and I'll drop your keys off monday",
+   "tokens": [
+    "drop",
+    "keys",
+    "off",
+    "omar",
+    "to"
+   ],
+   "expected": "user_owes"
+  }
+ ]
+}

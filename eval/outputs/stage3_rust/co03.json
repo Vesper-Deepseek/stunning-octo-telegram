@@ -1,0 +1,20 @@
+{
+  "id": "co03",
+  "category": "clear_user_owes",
+  "input": "told the landlord I'd send the water bill by the 30th",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "low",
+      "description": "send water bill by Sept. 30th",
+      "direction": "user_owes",
+      "expected_date": "2026-09-30",
+      "overall_confidence": "low",
+      "party": "landlord",
+      "party_confidence": "high"
+    }
+  ],
+  "latency_s": 34.79
+}

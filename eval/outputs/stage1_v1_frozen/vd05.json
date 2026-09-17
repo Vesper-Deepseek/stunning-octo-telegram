@@ -1,0 +1,20 @@
+{
+  "id": "vd05",
+  "category": "vague_or_missing_date",
+  "input": "Mira's waiting on my feedback for her portfolio, been sitting on it for days",
+  "raw": "[{\"commitment_found\": true, \"party\": \"Mira\", \"party_confidence\": \"high\", \"description\": \"Mira to provide feedback on portfolio\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-08-28\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "Mira",
+      "party_confidence": "high",
+      "description": "Mira to provide feedback on portfolio",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-28",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    }
+  ],
+  "latency_s": 11.55
+}

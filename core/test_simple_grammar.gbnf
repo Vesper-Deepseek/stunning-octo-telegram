@@ -1,0 +1,3 @@
+root ::= isodate
+isodate ::= "\"" digit digit digit digit "-" digit digit "-" digit digit "\""
+digit ::= [0-9]

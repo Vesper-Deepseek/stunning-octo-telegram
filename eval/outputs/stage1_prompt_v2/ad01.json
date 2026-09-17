@@ -1,0 +1,20 @@
+{
+  "id": "ad01",
+  "category": "ambiguous_direction",
+  "input": "I told him I'd get it back to him",
+  "raw": "[{\"commitment_found\": true, \"party\": null, \"party_confidence\": \"low\", \"description\": \"return item to unnamed person\", \"direction\": \"unclear\", \"expected_date\": null, \"date_confidence\": \"low\", \"overall_confidence\": \"low\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": null,
+      "party_confidence": "low",
+      "description": "return item to unnamed person",
+      "direction": "unclear",
+      "expected_date": null,
+      "date_confidence": "low",
+      "overall_confidence": "low"
+    }
+  ],
+  "latency_s": 11.07
+}

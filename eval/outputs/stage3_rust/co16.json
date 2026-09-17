@@ -1,0 +1,20 @@
+{
+  "id": "co16",
+  "category": "clear_owed_to_user",
+  "input": "library texted: my hold on Piranesi arrived, pickup by closing saturday",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "high",
+      "description": "library pick up Piranesi on Saturday",
+      "direction": "unclear",
+      "expected_date": "2026-08-26",
+      "overall_confidence": "high",
+      "party": "Library",
+      "party_confidence": "high"
+    }
+  ],
+  "latency_s": 43.84
+}

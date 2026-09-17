@@ -1,0 +1,30 @@
+{
+  "id": "co14",
+  "category": "clear_owed_to_user",
+  "input": "the garage was supposed to have my car ready tuesday and still nothing",
+  "raw": "[{\"commitment_found\": true, \"party\": \"garage\", \"party_confidence\": \"high\", \"description\": \"garage to have car ready\", \"direction\": \"owed_to_user\", \"expected_date\": \"2026-08-22\", \"date_confidence\": \"high\", \"overall_confidence\": \"high\"}, {\"commitment_found\": true, \"party\": \"garage\", \"party_confidence\": \"high\", \"description\": \"garage to have car ready\", \"direction\": \"user_owes\", \"expected_date\": null, \"date_confidence\": \"low\", \"overall_confidence\": \"low\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "garage",
+      "party_confidence": "high",
+      "description": "garage to have car ready",
+      "direction": "owed_to_user",
+      "expected_date": "2026-08-22",
+      "date_confidence": "high",
+      "overall_confidence": "high"
+    },
+    {
+      "commitment_found": true,
+      "party": "garage",
+      "party_confidence": "high",
+      "description": "garage to have car ready",
+      "direction": "user_owes",
+      "expected_date": null,
+      "date_confidence": "low",
+      "overall_confidence": "low"
+    }
+  ],
+  "latency_s": 14.9
+}

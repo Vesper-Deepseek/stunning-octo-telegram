@@ -1,0 +1,92 @@
+{
+  "stage": "stage1_v1_frozen",
+  "prompt_version": "v1_initial",
+  "model": "Qwen2.5-1.5B-Instruct Q4_K_M (greedy, temp=0)",
+  "n_examples": 46,
+  "n_total_expected_commitments": 47,
+  "parse_rate_pct": 100.0,
+  "clean_json_rate_pct": 100.0,
+  "commitment_level": {
+    "tp": 16,
+    "fp": 34,
+    "fn": 31,
+    "precision_pct": 32.0,
+    "recall_pct": 34.04255319148936,
+    "f1_pct": 32.98969072164948
+  },
+  "usable_after_review": {
+    "count": 16,
+    "recall_pct": 34.0
+  },
+  "field_accuracy_on_matched": {
+    "n_matched": 16,
+    "party_correct_pct": 100.0,
+    "direction_correct_pct": 100.0,
+    "date_correct_pct": 37.5,
+    "fabricated_dates_on_null_gold": 2
+  },
+  "noise_rejection": {
+    "n_noise": 9,
+    "fp_on_noise": 0
+  },
+  "latency_seconds": {
+    "mean": 10.73,
+    "median": 9.7,
+    "max": 29.37
+  },
+  "self_reported_confidence_distribution": {
+    "overall": {
+      "high": 13,
+      "low": 3
+    },
+    "date": {
+      "high": 12,
+      "low": 4
+    },
+    "party": {
+      "high": 14,
+      "low": 2
+    }
+  },
+  "false_positive_ids_by_category": {
+    "clear_user_owes": [
+      "co01",
+      "co02",
+      "co03",
+      "co04",
+      "co05",
+      "co06",
+      "co07",
+      "co08"
+    ],
+    "clear_owed_to_user": [
+      "co14",
+      "co15"
+    ],
+    "ambiguous_direction": [
+      "ad02",
+      "ad03",
+      "ad04",
+      "ad06"
+    ],
+    "vague_or_missing_date": [
+      "vd01",
+      "vd03",
+      "vd04",
+      "vd05",
+      "vd06",
+      "vd07",
+      "vd08"
+    ],
+    "multi_commitment": [
+      "mc02",
+      "mc03",
+      "mc04",
+      "mc05",
+      "mc06"
+    ],
+    "noise": [
+      "nz06"
+    ]
+  }
+}

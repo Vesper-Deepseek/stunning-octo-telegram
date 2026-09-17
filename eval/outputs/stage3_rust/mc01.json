@@ -1,0 +1,30 @@
+{
+  "id": "mc01",
+  "category": "multi_commitment",
+  "input": "ok so: pay back Lena the 20 euros by thursday, and remind Marco to send me the receipt from the hotel",
+  "raw": "",
+  "parse_note": "loaded_final_preds",
+  "preds": [
+    {
+      "commitment_found": true,
+      "date_confidence": "high",
+      "description": "pay back user 20 euros",
+      "direction": "user_owes",
+      "expected_date": "2026-08-23",
+      "overall_confidence": "high",
+      "party": "Lena",
+      "party_confidence": "high"
+    },
+    {
+      "commitment_found": true,
+      "date_confidence": "high",
+      "description": "send Marco the receipt from the hotel",
+      "direction": "owed_to_user",
+      "expected_date": null,
+      "overall_confidence": "low",
+      "party": "Marco",
+      "party_confidence": "high"
+    }
+  ],
+  "latency_s": 53.22
+}

@@ -1,0 +1,20 @@
+{
+  "id": "vd08",
+  "category": "vague_or_missing_date",
+  "input": "Kwame owes me sixty bucks from the cabin trip, said he'd sort it soon",
+  "raw": "[{\"commitment_found\": true, \"party\": \"Kwame\", \"party_confidence\": \"high\", \"description\": \"repay Kwame 60 from cabin trip\", \"direction\": \"owed_to_user\", \"expected_date\": null, \"date_confidence\": \"low\", \"overall_confidence\": \"high\"}]",
+  "parse_note": "clean",
+  "preds": [
+    {
+      "commitment_found": true,
+      "party": "Kwame",
+      "party_confidence": "high",
+      "description": "repay Kwame 60 from cabin trip",
+      "direction": "owed_to_user",
+      "expected_date": null,
+      "date_confidence": "low",
+      "overall_confidence": "high"
+    }
+  ],
+  "latency_s": 8.82
+}
