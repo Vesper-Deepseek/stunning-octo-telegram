@@ -9,36 +9,44 @@ import 'loose_ends_bridge_linux.dart';
 /// Bridge to the Rust core.
 ///
 /// On Linux desktop, uses dart:ffi to call the native shared library directly.
-/// On Android, falls back to the MethodChannel/JNI bridge.
+/// On Android, uses the MethodChannel/JNI bridge.
 class LooseEndsBridge {
   static const _channel = MethodChannel('com.looseends/core');
   static bool _initialized = false;
 
   static Future<void> init() async {
     if (_initialized) return;
-    if (Platform.isLinux) {
-      await LooseEndsBridgeLinux.init();
-      _initialized = true;
-      return;
-    }
 
+    // Prefer the platform channel. This is the Android path and also makes
+    // the bridge testable on Linux without requiring a native .so in tests.
     try {
       final initialized = await _channel.invokeMethod<bool>('init') ?? false;
       if (initialized) {
         _initialized = true;
-      } else {
-        debugPrint('Native bridge unavailable; running in stub mode');
+        return;
       }
     } on PlatformException catch (e) {
       debugPrint('Bridge init failed: ${e.message}');
+      return;
     } on MissingPluginException {
-      debugPrint('Native channel not registered; running in stub mode');
+      // Desktop builds can fall through to the FFI implementation below.
+    }
+
+    if (Platform.isLinux) {
+      try {
+        await LooseEndsBridgeLinux.init();
+        _initialized = true;
+      } catch (e) {
+        debugPrint('Linux native bridge unavailable; running in stub mode: $e');
+      }
+    } else {
+      debugPrint('Native bridge unavailable; running in stub mode');
     }
   }
 
   static Future<List<Draft>> ingestText(String text) async {
     if (!_initialized) return _fallbackIngest(text);
-    if (Platform.isLinux) {
+    if (Platform.isLinux && !_channelAvailable) {
       final maps = LooseEndsBridgeLinux.ingestText(text);
       return maps.map((m) => Draft(
             id: m['id'] as int? ?? 0,
@@ -54,25 +62,25 @@ class LooseEndsBridge {
 
     try {
       final result = await _channel.invokeMethod('ingestText', {'text': text});
-      final drafts = (result as List).cast<Map>().map((m) {
-        return Draft(
-          id: m['id'] as int? ?? 0,
-          description: m['description'] as String,
-          direction: m['direction'] as String,
-          expectedDate: m['expected_date'] as String?,
-          party: m['party'] as String?,
-          partyConfidence: m['party_confidence'] as String,
-          dateConfidence: m['date_confidence'] as String,
-          overallConfidence: m['overall_confidence'] as String,
-        );
-      }).toList();
-      return drafts;
+      final list = result is List ? result : const [];
+      return list.cast<Map>().map((m) => Draft(
+            id: m['id'] as int? ?? 0,
+            description: m['description'] as String,
+            direction: m['direction'] as String,
+            expectedDate: m['expected_date'] as String?,
+            party: m['party'] as String?,
+            partyConfidence: m['party_confidence'] as String,
+            dateConfidence: m['date_confidence'] as String,
+            overallConfidence: m['overall_confidence'] as String,
+          )).toList();
     } on PlatformException {
       return _fallbackIngest(text);
     } on MissingPluginException {
       return _fallbackIngest(text);
     }
   }
+
+  static bool _channelAvailable = false;
 
   static Future<int?> confirmDraft(
     Draft draft, {
@@ -81,7 +89,7 @@ class LooseEndsBridge {
     String? dateOverride,
   }) async {
     if (!_initialized) return null;
-    if (Platform.isLinux) {
+    if (Platform.isLinux && !_channelAvailable) {
       return LooseEndsBridgeLinux.confirmDraft(
         <String, dynamic>{
           'id': draft.id,
@@ -114,7 +122,7 @@ class LooseEndsBridge {
 
   static Future<List<CommitmentView>> listOpen(Direction dir) async {
     if (!_initialized) return [];
-    if (Platform.isLinux) {
+    if (Platform.isLinux && !_channelAvailable) {
       final maps = LooseEndsBridgeLinux.listOpen(dir.name);
       return maps.map((m) => CommitmentView(
             id: m['id'] as int,
@@ -129,7 +137,8 @@ class LooseEndsBridge {
 
     try {
       final result = await _channel.invokeMethod('listOpen', {'direction': dir.name});
-      return (result as List).cast<Map>().map((m) => CommitmentView(
+      final list = result is List ? result : const [];
+      return list.cast<Map>().map((m) => CommitmentView(
             id: m['id'] as int,
             description: m['description'] as String,
             direction: Direction.fromString(m['direction'] as String),
