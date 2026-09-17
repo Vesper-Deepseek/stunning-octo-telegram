@@ -41,7 +41,7 @@ class LooseEndsBridge {
     if (Platform.isLinux) {
       final maps = LooseEndsBridgeLinux.ingestText(text);
       return maps.map((m) => Draft(
-            id: m['id'] as int,
+            id: m['id'] as int? ?? 0,
             description: m['description'] as String,
             direction: m['direction'] as String,
             expectedDate: m['expected_date'] as String?,
@@ -56,7 +56,7 @@ class LooseEndsBridge {
       final result = await _channel.invokeMethod('ingestText', {'text': text});
       final drafts = (result as List).cast<Map>().map((m) {
         return Draft(
-          id: m['id'] as int,
+          id: m['id'] as int? ?? 0,
           description: m['description'] as String,
           direction: m['direction'] as String,
           expectedDate: m['expected_date'] as String?,
