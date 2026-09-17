@@ -12,12 +12,18 @@ import org.json.JSONObject
 class NativeBridge private constructor() {
     @Volatile private var store: Long = 0
 
-    fun init(dbDir: String) {
-        if (store != 0L) return
+    fun init(dbDir: String): Boolean {
+        if (store != 0L) return true
         synchronized(this) {
-            if (store != 0L) return
+            if (store != 0L) return true
             val dbPath = "$dbDir/loose_ends.sqlite"
-            store = looseEndsOpen(dbPath)
+            store = try {
+                looseEndsOpen(dbPath)
+            } catch (e: UnsatisfiedLinkError) {
+                android.util.Log.e("NativeBridge", "Native library unavailable", e)
+                0L
+            }
+            return store != 0L
         }
     }
 
@@ -27,8 +33,7 @@ class NativeBridge private constructor() {
         val json = looseEndsIngestRules(handle, text, year, month, day) ?: return null
         return try {
             val obj = JSONObject(json)
-            val drafts = obj.optJSONArray("drafts") ?: return JSONArray()
-            drafts
+            obj.optJSONArray("drafts") ?: JSONArray()
         } catch (e: Exception) {
             null
         }
