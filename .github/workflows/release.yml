@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == github.event.repository.default_branch &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.head_commit.message == 'ci: add GitHub validation workflow'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout validated commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Build release APK
+        working-directory: app
+        run: flutter build apk --release --target-platform android-arm64
+
+      - name: Create GitHub release and upload APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(sed -n 's/^version: \([0-9][^+[:space:]]*\).*/\1/p' app/pubspec.yaml)
+          TAG="v${VERSION}"
+          APK="app/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
+          gh release create "$TAG" "$APK" \
+            --repo "${{ github.repository }}" \
+            --target "${{ github.event.workflow_run.head_sha }}" \
+            --title "Loose Ends ${TAG}" \
+            --notes "Verified Android arm64 release built from ${{ github.event.workflow_run.head_sha }}."
