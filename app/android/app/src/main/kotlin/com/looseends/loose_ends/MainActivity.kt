@@ -3,6 +3,8 @@ package com.looseends.loose_ends
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import org.json.JSONArray
+import org.json.JSONObject
 
 class MainActivity : FlutterActivity() {
     private val channelName = "com.looseends/core"
@@ -14,8 +16,7 @@ class MainActivity : FlutterActivity() {
                 val bridge = NativeBridge.getInstance()
                 when (call.method) {
                     "init" -> {
-                        bridge.init(applicationContext.filesDir.absolutePath)
-                        result.success(null)
+                        result.success(bridge.init(applicationContext.filesDir.absolutePath))
                     }
                     "ingestText" -> {
                         val text = call.argument<String>("text") ?: ""
@@ -24,7 +25,7 @@ class MainActivity : FlutterActivity() {
                             text,
                             today.year, today.monthValue, today.dayOfMonth
                         )
-                        result.success(json)
+                        result.success(jsonArrayToList(json))
                     }
                     "confirmDraft" -> {
                         val draftId = (call.argument<Number>("draftId") as? Number)?.toLong()
@@ -43,10 +44,27 @@ class MainActivity : FlutterActivity() {
                             dir,
                             today.year, today.monthValue, today.dayOfMonth
                         )
-                        result.success(json)
+                        result.success(jsonArrayToList(json))
                     }
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    private fun jsonArrayToList(array: JSONArray?): List<Map<String, Any?>>? {
+        if (array == null) return null
+        return buildList {
+            for (i in 0 until array.length()) {
+                val obj = array.optJSONObject(i) ?: continue
+                val map = mutableMapOf<String, Any?>()
+                val keys = obj.keys()
+                while (keys.hasNext()) {
+                    val key = keys.next()
+                    val value = obj.opt(key)
+                    map[key] = if (value === JSONObject.NULL) null else value
+                }
+                add(map)
+            }
+        }
     }
 }
