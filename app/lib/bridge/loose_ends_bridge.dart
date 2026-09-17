@@ -23,8 +23,12 @@ class LooseEndsBridge {
     }
 
     try {
-      await _channel.invokeMethod('init');
-      _initialized = true;
+      final initialized = await _channel.invokeMethod<bool>('init') ?? false;
+      if (initialized) {
+        _initialized = true;
+      } else {
+        debugPrint('Native bridge unavailable; running in stub mode');
+      }
     } on PlatformException catch (e) {
       debugPrint('Bridge init failed: ${e.message}');
     } on MissingPluginException {
@@ -37,6 +41,7 @@ class LooseEndsBridge {
     if (Platform.isLinux) {
       final maps = LooseEndsBridgeLinux.ingestText(text);
       return maps.map((m) => Draft(
+            id: m['id'] as int,
             description: m['description'] as String,
             direction: m['direction'] as String,
             expectedDate: m['expected_date'] as String?,
@@ -51,6 +56,7 @@ class LooseEndsBridge {
       final result = await _channel.invokeMethod('ingestText', {'text': text});
       final drafts = (result as List).cast<Map>().map((m) {
         return Draft(
+          id: m['id'] as int,
           description: m['description'] as String,
           direction: m['direction'] as String,
           expectedDate: m['expected_date'] as String?,
@@ -78,6 +84,7 @@ class LooseEndsBridge {
     if (Platform.isLinux) {
       return LooseEndsBridgeLinux.confirmDraft(
         <String, dynamic>{
+          'id': draft.id,
           'description': draft.description,
           'direction': draft.direction,
           'expected_date': draft.expectedDate,
@@ -91,6 +98,7 @@ class LooseEndsBridge {
 
     try {
       final result = await _channel.invokeMethod('confirmDraft', {
+        'draftId': draft.id,
         'description': descriptionOverride ?? draft.description,
         'direction': (directionOverride ?? Direction.fromString(draft.direction)).name,
         'expected_date': dateOverride ?? draft.expectedDate,
@@ -140,6 +148,7 @@ class LooseEndsBridge {
   static List<Draft> _fallbackIngest(String text) {
     return [
       Draft(
+        id: 0,
         description: text.length > 80 ? '${text.substring(0, 80)}...' : text,
         direction: 'unclear',
         expectedDate: null,
