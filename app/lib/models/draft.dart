@@ -10,7 +10,7 @@ class Draft {
   final String overallConfidence;
 
   const Draft({
-    required this.id,
+    this.id = 0,
     required this.description,
     required this.direction,
     this.expectedDate,
