@@ -13,6 +13,7 @@ import 'loose_ends_bridge_linux.dart';
 class LooseEndsBridge {
   static const _channel = MethodChannel('com.looseends/core');
   static bool _initialized = false;
+  static bool _channelAvailable = false;
 
   static Future<void> init() async {
     if (_initialized) return;
@@ -22,6 +23,7 @@ class LooseEndsBridge {
     try {
       final initialized = await _channel.invokeMethod<bool>('init') ?? false;
       if (initialized) {
+        _channelAvailable = true;
         _initialized = true;
         return;
       }
@@ -36,6 +38,7 @@ class LooseEndsBridge {
       try {
         await LooseEndsBridgeLinux.init();
         _initialized = true;
+        _channelAvailable = false;
       } catch (e) {
         debugPrint('Linux native bridge unavailable; running in stub mode: $e');
       }
@@ -79,8 +82,6 @@ class LooseEndsBridge {
       return _fallbackIngest(text);
     }
   }
-
-  static bool _channelAvailable = false;
 
   static Future<int?> confirmDraft(
     Draft draft, {
