@@ -48,16 +48,61 @@ jobs:
                   raise SystemExit("ACTION_VERB_HINTS declaration is incomplete")
               path.write_text(text[:start] + text[end + 2:])
 
+      - name: Fix remaining core Clippy branches
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path("core/src/planner.rs")
+          text = path.read_text()
+          old = '''                if days_until < 0 {\n                    PlanAction::SurfaceNow\n                } else if days_until <= cfg.pre_due_surface_days {\n                    PlanAction::SurfaceNow\n                } else {\n                    PlanAction::Snooze { until: Some(due) }\n                }'''
+          new = '''                if days_until < 0 || days_until <= cfg.pre_due_surface_days {\n                    PlanAction::SurfaceNow\n                } else {\n                    PlanAction::Snooze { until: Some(due) }\n                }'''
+          if old not in text:
+              raise SystemExit("dated planner branch not found")
+          text = text.replace(old, new, 1)
+          old = '''                if age >= cfg.surface_after_days {\n                    PlanAction::SurfaceNow\n                } else if age <= cfg.quiet_days {\n                    PlanAction::Snooze { until: None }\n                } else {\n                    PlanAction::Snooze { until: None }\n                }'''
+          new = '''                if age >= cfg.surface_after_days {\n                    PlanAction::SurfaceNow\n                } else {\n                    PlanAction::Snooze { until: None }\n                }'''
+          if old not in text:
+              raise SystemExit("undated planner branch not found")
+          path.write_text(text.replace(old, new, 1))
+
       - name: Apply native bridge Clippy fixes
         working-directory: app/native
         run: cargo clippy --locked --features jni --fix --allow-dirty --allow-staged -- -D warnings -A dead_code
+
+      - name: Fix native FFI lint findings
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path("app/native/src/lib.rs")
+          text = path.read_text()
+          replacements = {
+              'b"looseEndsOpen\\0".as_ptr() as *mut c_char': 'c"looseEndsOpen".as_ptr().cast_mut()',
+              'b"(Ljava/lang/String;)J\\0".as_ptr() as *mut c_char': 'c"(Ljava/lang/String;)J".as_ptr().cast_mut()',
+              'b"looseEndsIngestRules\\0".as_ptr() as *mut c_char': 'c"looseEndsIngestRules".as_ptr().cast_mut()',
+              'b"(JLjava/lang/String;III)Ljava/lang/String;\\0".as_ptr() as *mut c_char': 'c"(JLjava/lang/String;III)Ljava/lang/String;".as_ptr().cast_mut()',
+              'b"looseEndsConfirmDraft\\0".as_ptr() as *mut c_char': 'c"looseEndsConfirmDraft".as_ptr().cast_mut()',
+              'b"(JJLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)J\\0"\n                    .as_ptr() as *mut c_char': 'c"(JJLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)J".as_ptr().cast_mut()',
+              'b"looseEndsListOpen\\0".as_ptr() as *mut c_char': 'c"looseEndsListOpen".as_ptr().cast_mut()',
+              'match handle.store.create_commitment(new) {\n        Ok(id) => id,\n        Err(_) => 0,\n    }': 'handle.store.create_commitment(new).unwrap_or_default()',
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  print(f"pattern already fixed or absent: {old[:50]}")
+              else:
+                  text = text.replace(old, new)
+          text = text.replace('pub extern "C" fn loose_ends_', 'pub unsafe extern "C" fn loose_ends_')
+          path.write_text(text)
 
       - name: Reformat changed Rust sources
         run: |
           cargo fmt --manifest-path core/Cargo.toml
           cargo fmt --manifest-path app/native/Cargo.toml
 
-      - name: Commit formatter and Clippy fixes
+      - name: Remove generated Rust build output from Git
+        shell: bash
+        run: git rm -r --cached --ignore-unmatch core/target app/native/target
+
+      - name: Commit formatter and source fixes
         shell: bash
         run: |
           if git diff --quiet; then
@@ -65,7 +110,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add core app/native
+          git add .gitignore core app/native
           git commit -m "ci: format and validate"
           git push origin HEAD:${GITHUB_REF_NAME}
 
