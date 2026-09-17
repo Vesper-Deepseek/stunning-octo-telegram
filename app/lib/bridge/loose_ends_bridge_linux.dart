@@ -146,6 +146,7 @@ class LooseEndsBridgeLinux {
     final json = jsonDecode(resultStr) as Map<String, dynamic>;
     final drafts = (json['drafts'] as List).cast<Map>().map((m) {
       return {
+        'id': m['id'] as int,
         'description': m['description'] as String,
         'direction': m['direction'] as String,
         'expected_date': m['expected_date'] as String?,
@@ -172,7 +173,7 @@ class LooseEndsBridgeLinux {
 
     final id = _looseEndsConfirmDraft!(
       _storeHandle!,
-      0,
+      draft['id'] as int? ?? 0,
       descC,
       dirC,
       dateC,
