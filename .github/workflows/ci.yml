@@ -31,7 +31,33 @@ jobs:
         working-directory: app/native
         run: cargo fmt
 
-      - name: Commit formatter changes
+      - name: Apply core Clippy fixes
+        working-directory: core
+        run: cargo clippy --all-targets --locked --fix --allow-dirty --allow-staged -- -D warnings -A dead_code
+
+      - name: Remove unused core action hints
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path("core/src/rules.rs")
+          text = path.read_text()
+          start = text.find("const ACTION_VERB_HINTS: &[&str] = &[")
+          if start >= 0:
+              end = text.find("];", start)
+              if end < 0:
+                  raise SystemExit("ACTION_VERB_HINTS declaration is incomplete")
+              path.write_text(text[:start] + text[end + 2:])
+
+      - name: Apply native bridge Clippy fixes
+        working-directory: app/native
+        run: cargo clippy --locked --features jni --fix --allow-dirty --allow-staged -- -D warnings -A dead_code
+
+      - name: Reformat changed Rust sources
+        run: |
+          cargo fmt --manifest-path core/Cargo.toml
+          cargo fmt --manifest-path app/native/Cargo.toml
+
+      - name: Commit formatter and Clippy fixes
         shell: bash
         run: |
           if git diff --quiet; then
