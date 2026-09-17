@@ -3,10 +3,31 @@
 pub fn detect_party(text: &str) -> Option<String> {
     // role words after possessives
     const ROLES: &[&str] = &[
-        "landlord", "sister", "brother", "mum", "mom", "dad", "boss", "dentist",
-        "doctor", "vet", "garage", "library", "sitter", "plumber", "electrician",
-        "agent", "professor", "teacher", "cousin", "neighbour", "neighbor",
-        "flatmate", "roommate", "accountant", "lawyer",
+        "landlord",
+        "sister",
+        "brother",
+        "mum",
+        "mom",
+        "dad",
+        "boss",
+        "dentist",
+        "doctor",
+        "vet",
+        "garage",
+        "library",
+        "sitter",
+        "plumber",
+        "electrician",
+        "agent",
+        "professor",
+        "teacher",
+        "cousin",
+        "neighbour",
+        "neighbor",
+        "flatmate",
+        "roommate",
+        "accountant",
+        "lawyer",
     ];
     let lower = text.to_lowercase();
     for role in ROLES {
@@ -41,8 +62,19 @@ pub fn detect_party(text: &str) -> Option<String> {
 
     // organizations / institutions worth tracking as parties
     const ORGS: &[&str] = &[
-        "ups", "fedex", "dhl", "royal mail", "hmrc", "irs", "amazon", "ebay",
-        "paypal", "bank", "gym", "university", "council",
+        "ups",
+        "fedex",
+        "dhl",
+        "royal mail",
+        "hmrc",
+        "irs",
+        "amazon",
+        "ebay",
+        "paypal",
+        "bank",
+        "gym",
+        "university",
+        "council",
     ];
     for org in ORGS {
         if lower.contains(org) {
@@ -58,8 +90,7 @@ pub fn detect_party(text: &str) -> Option<String> {
         let is_cap = clean.chars().next().is_some_and(|c| c.is_uppercase())
             && clean.len() > 1
             && !STOP_CAPS.contains(&clean.to_lowercase().as_str());
-        let sentence_initial =
-            i == 0 || prev_ended_sentence;
+        let sentence_initial = i == 0 || prev_ended_sentence;
         prev_ended_sentence = tok.ends_with('.') || tok.ends_with('!') || tok.ends_with('?');
         if is_cap && !sentence_initial {
             candidates.push(clean.to_string());
@@ -78,10 +109,38 @@ fn title_case(s: &str) -> String {
 }
 
 const STOP_CAPS: &[&str] = &[
-    "i", "i'll", "i'm", "i'd", "i've", "it's", "monday", "tuesday", "wednesday",
-    "thursday", "friday", "saturday", "sunday", "note", "ok", "so", "the", "need",
-    "must", "told", "promised", "still", "also", "and", "but", "when", "she", "he",
-    "they", "this", "that", "reminder",
+    "i",
+    "i'll",
+    "i'm",
+    "i'd",
+    "i've",
+    "it's",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+    "note",
+    "ok",
+    "so",
+    "the",
+    "need",
+    "must",
+    "told",
+    "promised",
+    "still",
+    "also",
+    "and",
+    "but",
+    "when",
+    "she",
+    "he",
+    "they",
+    "this",
+    "that",
+    "reminder",
 ];
 
 #[cfg(test)]
@@ -90,8 +149,14 @@ mod tests {
 
     #[test]
     fn roles() {
-        assert_eq!(detect_party("told the landlord I'd pay"), Some("the landlord".into()));
-        assert_eq!(detect_party("owe my sister a call"), Some("my sister".into()));
+        assert_eq!(
+            detect_party("told the landlord I'd pay"),
+            Some("the landlord".into())
+        );
+        assert_eq!(
+            detect_party("owe my sister a call"),
+            Some("my sister".into())
+        );
     }
 
     #[test]
@@ -112,8 +177,14 @@ mod tests {
     fn orgs_are_title_cased() {
         // Organizations should be normalized to display form regardless of
         // casing in the input.
-        assert_eq!(detect_party("the package from amazon"), Some("Amazon".into()));
-        assert_eq!(detect_party("paypal still has my refund"), Some("Paypal".into()));
+        assert_eq!(
+            detect_party("the package from amazon"),
+            Some("Amazon".into())
+        );
+        assert_eq!(
+            detect_party("paypal still has my refund"),
+            Some("Paypal".into())
+        );
         assert_eq!(detect_party("IRS owes me a refund"), Some("Irs".into()));
     }
 

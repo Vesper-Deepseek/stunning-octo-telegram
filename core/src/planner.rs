@@ -150,27 +150,43 @@ mod tests {
 
     #[test]
     fn open_dated_overdue_surfaces_immediately() {
-        let c = c_with("2026-08-01T00:00:00+00:00", "2026-08-01T00:00:00+00:00",
-                       Some("2026-08-20"), Status::Open);
+        let c = c_with(
+            "2026-08-01T00:00:00+00:00",
+            "2026-08-01T00:00:00+00:00",
+            Some("2026-08-20"),
+            Status::Open,
+        );
         let today = day(2026, 8, 26);
-        assert!(matches!(plan(&c, today, &PlannerConfig::default()),
-                          PlanAction::SurfaceNow));
+        assert!(matches!(
+            plan(&c, today, &PlannerConfig::default()),
+            PlanAction::SurfaceNow
+        ));
     }
 
     #[test]
     fn open_dated_at_threshold_surfaces() {
         // pre_due_surface_days default is 1 -> due == today + 1 should surface
-        let c = c_with("2026-08-01T00:00:00+00:00", "2026-08-01T00:00:00+00:00",
-                       Some("2026-08-27"), Status::Open);
+        let c = c_with(
+            "2026-08-01T00:00:00+00:00",
+            "2026-08-01T00:00:00+00:00",
+            Some("2026-08-27"),
+            Status::Open,
+        );
         let today = day(2026, 8, 26);
-        assert!(matches!(plan(&c, today, &PlannerConfig::default()),
-                          PlanAction::SurfaceNow));
+        assert!(matches!(
+            plan(&c, today, &PlannerConfig::default()),
+            PlanAction::SurfaceNow
+        ));
     }
 
     #[test]
     fn open_dated_two_days_out_snoozes_to_due() {
-        let c = c_with("2026-08-01T00:00:00+00:00", "2026-08-01T00:00:00+00:00",
-                       Some("2026-08-28"), Status::Open);
+        let c = c_with(
+            "2026-08-01T00:00:00+00:00",
+            "2026-08-01T00:00:00+00:00",
+            Some("2026-08-28"),
+            Status::Open,
+        );
         let today = day(2026, 8, 26);
         match plan(&c, today, &PlannerConfig::default()) {
             PlanAction::Snooze { until: Some(d) } => assert_eq!(d, day(2026, 8, 28)),
@@ -181,50 +197,80 @@ mod tests {
     #[test]
     fn overdue_at_escalation_threshold_escalates() {
         // escalate_after_overdue_days default = 7
-        let c = c_with("2026-08-01T00:00:00+00:00", "2026-08-01T00:00:00+00:00",
-                       Some("2026-08-19"), Status::Overdue);
+        let c = c_with(
+            "2026-08-01T00:00:00+00:00",
+            "2026-08-01T00:00:00+00:00",
+            Some("2026-08-19"),
+            Status::Overdue,
+        );
         let today = day(2026, 8, 26); // 7 days past
-        assert!(matches!(plan(&c, today, &PlannerConfig::default()),
-                          PlanAction::EscalateReminder));
+        assert!(matches!(
+            plan(&c, today, &PlannerConfig::default()),
+            PlanAction::EscalateReminder
+        ));
     }
 
     #[test]
     fn overdue_below_escalation_threshold_surfaces() {
-        let c = c_with("2026-08-01T00:00:00+00:00", "2026-08-01T00:00:00+00:00",
-                       Some("2026-08-23"), Status::Overdue);
+        let c = c_with(
+            "2026-08-01T00:00:00+00:00",
+            "2026-08-01T00:00:00+00:00",
+            Some("2026-08-23"),
+            Status::Overdue,
+        );
         let today = day(2026, 8, 26); // 3 days past
-        assert!(matches!(plan(&c, today, &PlannerConfig::default()),
-                          PlanAction::SurfaceNow));
+        assert!(matches!(
+            plan(&c, today, &PlannerConfig::default()),
+            PlanAction::SurfaceNow
+        ));
     }
 
     #[test]
     fn open_undated_within_quiet_period_stays_quiet() {
         // age = 0, quiet_days default 2 -> Snooze
-        let c = c_with("2026-08-26T00:00:00+00:00", "2026-08-26T00:00:00+00:00",
-                       None, Status::Open);
+        let c = c_with(
+            "2026-08-26T00:00:00+00:00",
+            "2026-08-26T00:00:00+00:00",
+            None,
+            Status::Open,
+        );
         let today = day(2026, 8, 26);
-        assert!(matches!(plan(&c, today, &PlannerConfig::default()),
-                          PlanAction::Snooze { until: None }));
+        assert!(matches!(
+            plan(&c, today, &PlannerConfig::default()),
+            PlanAction::Snooze { until: None }
+        ));
     }
 
     #[test]
     fn open_undated_at_quiet_boundary_is_quiet() {
         // age = 2 == quiet_days default -> Snooze
-        let c = c_with("2026-08-24T00:00:00+00:00", "2026-08-24T00:00:00+00:00",
-                       None, Status::Open);
+        let c = c_with(
+            "2026-08-24T00:00:00+00:00",
+            "2026-08-24T00:00:00+00:00",
+            None,
+            Status::Open,
+        );
         let today = day(2026, 8, 26);
-        assert!(matches!(plan(&c, today, &PlannerConfig::default()),
-                          PlanAction::Snooze { until: None }));
+        assert!(matches!(
+            plan(&c, today, &PlannerConfig::default()),
+            PlanAction::Snooze { until: None }
+        ));
     }
 
     #[test]
     fn open_undated_old_surfaces() {
         // age = 30, surface_after_days default 3 -> Surface
-        let c = c_with("2026-07-27T00:00:00+00:00", "2026-07-27T00:00:00+00:00",
-                       None, Status::Open);
+        let c = c_with(
+            "2026-07-27T00:00:00+00:00",
+            "2026-07-27T00:00:00+00:00",
+            None,
+            Status::Open,
+        );
         let today = day(2026, 8, 26);
-        assert!(matches!(plan(&c, today, &PlannerConfig::default()),
-                          PlanAction::SurfaceNow));
+        assert!(matches!(
+            plan(&c, today, &PlannerConfig::default()),
+            PlanAction::SurfaceNow
+        ));
     }
 
     #[test]
@@ -237,39 +283,63 @@ mod tests {
             surface_after_days: 10,
             ..PlannerConfig::default()
         };
-        let c = c_with("2026-08-21T00:00:00+00:00", "2026-08-21T00:00:00+00:00",
-                       None, Status::Open);
+        let c = c_with(
+            "2026-08-21T00:00:00+00:00",
+            "2026-08-21T00:00:00+00:00",
+            None,
+            Status::Open,
+        );
         let today = day(2026, 8, 26);
-        assert!(matches!(plan(&c, today, &cfg), PlanAction::Snooze { until: None }),
-                "mid-window undated commitment should remain quiet, not surface");
+        assert!(
+            matches!(plan(&c, today, &cfg), PlanAction::Snooze { until: None }),
+            "mid-window undated commitment should remain quiet, not surface"
+        );
     }
 
     #[test]
     fn snoozed_always_snoozes() {
-        let c = c_with("2026-08-01T00:00:00+00:00", "2026-08-26T00:00:00+00:00",
-                       None, Status::Snoozed);
+        let c = c_with(
+            "2026-08-01T00:00:00+00:00",
+            "2026-08-26T00:00:00+00:00",
+            None,
+            Status::Snoozed,
+        );
         let today = day(2026, 8, 26);
-        assert!(matches!(plan(&c, today, &PlannerConfig::default()),
-                          PlanAction::Snooze { until: None }));
+        assert!(matches!(
+            plan(&c, today, &PlannerConfig::default()),
+            PlanAction::Snooze { until: None }
+        ));
     }
 
     #[test]
     fn resolved_freshly_does_not_archive() {
-        let c = c_with("2026-08-01T00:00:00+00:00", "2026-08-25T00:00:00+00:00",
-                       None, Status::Resolved);
+        let c = c_with(
+            "2026-08-01T00:00:00+00:00",
+            "2026-08-25T00:00:00+00:00",
+            None,
+            Status::Resolved,
+        );
         let today = day(2026, 8, 26);
         // 1 day after update; archive threshold 30 -> Snooze, not Archive
-        assert!(matches!(plan(&c, today, &PlannerConfig::default()),
-                          PlanAction::Snooze { until: None }));
+        assert!(matches!(
+            plan(&c, today, &PlannerConfig::default()),
+            PlanAction::Snooze { until: None }
+        ));
     }
 
     #[test]
     fn resolved_at_archive_boundary_archives() {
         // archive_resolved_after_days default 30 -> age 30 == threshold => Archive
-        let c = c_with("2026-07-01T00:00:00+00:00", "2026-07-27T00:00:00+00:00",
-                       None, Status::Resolved);
+        let c = c_with(
+            "2026-07-01T00:00:00+00:00",
+            "2026-07-27T00:00:00+00:00",
+            None,
+            Status::Resolved,
+        );
         let today = day(2026, 8, 26); // 30 days after last update
-        assert!(matches!(plan(&c, today, &PlannerConfig::default()),
-                          PlanAction::Archive));
+        assert!(matches!(
+            plan(&c, today, &PlannerConfig::default()),
+            PlanAction::Archive
+        ));
     }
 }

@@ -10,8 +10,8 @@
 
 use std::path::PathBuf;
 
-use loose_ends_core::neural::{BreakerConfig, NeuralExtractor};
 use loose_ends_core::models::ExtractDirection;
+use loose_ends_core::neural::{BreakerConfig, NeuralExtractor};
 
 #[derive(serde::Deserialize)]
 struct Example {

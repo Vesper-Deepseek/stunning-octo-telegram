@@ -28,8 +28,8 @@ pub mod jni_sys {
 mod jni_bridge {
     use super::*;
     use crate::jni_sys::{
-        jboolean, jclass, jint, jlong, jsize, jstring, JavaVM, JNIEnv, JNINativeMethod, JNI_OK,
-        JNIInvokeInterface_, JNI_VERSION_1_6,
+        jboolean, jclass, jint, jlong, jsize, jstring, JNIEnv, JNIInvokeInterface_,
+        JNINativeMethod, JavaVM, JNI_OK, JNI_VERSION_1_6,
     };
 
     #[repr(C)]
@@ -156,8 +156,11 @@ mod jni_bridge {
         let mut env_ptr: *mut c_void = ptr::null_mut();
         let vm_interface = (*(vm as *mut _JavaVM)).functions;
         let get_env = (*vm_interface).v1_2.GetEnv;
-        if get_env(vm_interface as *mut JavaVM, &mut env_ptr as *mut *mut c_void, JNI_VERSION_1_6)
-            != JNI_OK
+        if get_env(
+            vm_interface as *mut JavaVM,
+            &mut env_ptr as *mut *mut c_void,
+            JNI_VERSION_1_6,
+        ) != JNI_OK
         {
             return -1;
         }
@@ -361,11 +364,14 @@ pub extern "C" fn loose_ends_confirm_draft(
     let date = cstr_to_owned(date_override);
     let party = cstr_to_owned(party_override);
 
-    let dir = dir_str.as_deref().map(|s| match s {
-        "user_owes" => CoreDirection::UserOwes,
-        "owed_to_user" => CoreDirection::OwedToUser,
-        _ => CoreDirection::UserOwes,
-    }).unwrap_or(CoreDirection::UserOwes);
+    let dir = dir_str
+        .as_deref()
+        .map(|s| match s {
+            "user_owes" => CoreDirection::UserOwes,
+            "owed_to_user" => CoreDirection::OwedToUser,
+            _ => CoreDirection::UserOwes,
+        })
+        .unwrap_or(CoreDirection::UserOwes);
 
     match handle.store.confirm_draft(
         draft_id,
@@ -404,22 +410,25 @@ pub extern "C" fn loose_ends_list_open(
     let cfg = PlannerConfig::default();
     match handle.store.view(dir, today, &cfg) {
         Ok(items) => {
-            let json: Vec<serde_json::Value> = items.into_iter().map(|(c, a)| {
-                serde_json::json!({
-                    "id": c.id,
-                    "description": c.description,
-                    "direction": format!("{:?}", c.direction).to_lowercase(),
-                    "expected_date": c.expected_date,
-                    "party": c.owed_to,
-                    "aging_action": match a {
-                        PlanAction::SurfaceNow => "surface",
-                        PlanAction::Snooze { .. } => "snooze",
-                        PlanAction::EscalateReminder => "escalate",
-                        PlanAction::Archive => "archive",
-                    },
-                    "created_at": c.created_at,
+            let json: Vec<serde_json::Value> = items
+                .into_iter()
+                .map(|(c, a)| {
+                    serde_json::json!({
+                        "id": c.id,
+                        "description": c.description,
+                        "direction": format!("{:?}", c.direction).to_lowercase(),
+                        "expected_date": c.expected_date,
+                        "party": c.owed_to,
+                        "aging_action": match a {
+                            PlanAction::SurfaceNow => "surface",
+                            PlanAction::Snooze { .. } => "snooze",
+                            PlanAction::EscalateReminder => "escalate",
+                            PlanAction::Archive => "archive",
+                        },
+                        "created_at": c.created_at,
+                    })
                 })
-            }).collect();
+                .collect();
             match CString::new(serde_json::to_string(&json).unwrap_or_default()) {
                 Ok(s) => s.into_raw(),
                 Err(_) => ptr::null_mut(),

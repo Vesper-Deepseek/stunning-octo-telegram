@@ -107,8 +107,10 @@ impl Store {
     // ---------------- parties ----------------
 
     pub fn upsert_party(&self, name: &str) -> rusqlite::Result<i64> {
-        self.conn
-            .execute("INSERT OR IGNORE INTO party(name) VALUES (?1)", params![name])?;
+        self.conn.execute(
+            "INSERT OR IGNORE INTO party(name) VALUES (?1)",
+            params![name],
+        )?;
         Ok(self
             .conn
             .query_row("SELECT id FROM party WHERE name = ?1", params![name], |r| {

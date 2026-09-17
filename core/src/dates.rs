@@ -40,9 +40,7 @@ pub fn parse_date_expression(text: &str, today: NaiveDate) -> DateResolution {
 
     // "the Nth" / "on the Nth" — day of current or next month
     if let Some(day) = capture_day_of_month(&lower) {
-        let this_month = today
-            .with_day(day)
-            .filter(|d| *d >= today);
+        let this_month = today.with_day(day).filter(|d| *d >= today);
         let resolved = this_month.or_else(|| next_month_with_day(today, day));
         return res(resolved, false);
     }
@@ -79,15 +77,25 @@ pub fn parse_date_expression(text: &str, today: NaiveDate) -> DateResolution {
 
     // deliberately vague: no concrete resolution
     const VAGUE: [&str; 9] = [
-        "soon", "next week", "this week", "next month", "this month", "sometime",
-        "eventually", "asap", "when i get a chance",
+        "soon",
+        "next week",
+        "this week",
+        "next month",
+        "this month",
+        "sometime",
+        "eventually",
+        "asap",
+        "when i get a chance",
     ];
     let vague = contains_word(&lower, &VAGUE);
     res(None, vague)
 }
 
 fn res(date: Option<NaiveDate>, vague: bool) -> DateResolution {
-    DateResolution { date, vague_marker_found: vague }
+    DateResolution {
+        date,
+        vague_marker_found: vague,
+    }
 }
 
 trait AlsoDate {
@@ -128,9 +136,7 @@ fn has_next_qualifier(hay: &str, weekday: &str) -> bool {
 fn capture_in_n(text: &str, unit: &str) -> Option<i64> {
     let pat = format!(r"in\s+(\d{{1,3}})\s+{unit}s?\b");
     let re_text = pat;
-    simple_number_after_in(text, unit).or_else(|| {
-        regex_lite_fallback(&re_text, text)
-    })
+    simple_number_after_in(text, unit).or_else(|| regex_lite_fallback(&re_text, text))
 }
 
 /// tiny helper avoiding an external regex dependency
@@ -159,8 +165,7 @@ fn capture_day_of_month(text: &str) -> Option<u32> {
         if toks[i] == "the" {
             if i + 1 < toks.len() {
                 let raw = toks[i + 1];
-                let num: String =
-                    raw.chars().take_while(|c| c.is_ascii_digit()).collect();
+                let num: String = raw.chars().take_while(|c| c.is_ascii_digit()).collect();
                 if !num.is_empty() {
                     if let Ok(d) = num.parse::<u32>() {
                         if (1..=31).contains(&d) {
@@ -238,30 +243,46 @@ mod tests {
 
     #[test]
     fn weekdays() {
-        assert_eq!(parse_date_expression("this friday", wed()).date,
-                   Some(NaiveDate::from_ymd_opt(2026, 8, 28).unwrap()));
-        assert_eq!(parse_date_expression("on sunday", wed()).date,
-                   Some(NaiveDate::from_ymd_opt(2026, 8, 30).unwrap()));
-        assert_eq!(parse_date_expression("next friday", wed()).date,
-                   Some(NaiveDate::from_ymd_opt(2026, 9, 4).unwrap()));
+        assert_eq!(
+            parse_date_expression("this friday", wed()).date,
+            Some(NaiveDate::from_ymd_opt(2026, 8, 28).unwrap())
+        );
+        assert_eq!(
+            parse_date_expression("on sunday", wed()).date,
+            Some(NaiveDate::from_ymd_opt(2026, 8, 30).unwrap())
+        );
+        assert_eq!(
+            parse_date_expression("next friday", wed()).date,
+            Some(NaiveDate::from_ymd_opt(2026, 9, 4).unwrap())
+        );
     }
 
     #[test]
     fn day_of_month() {
-        assert_eq!(parse_date_expression("by the 30th", wed()).date,
-                   Some(NaiveDate::from_ymd_opt(2026, 8, 30).unwrap()));
-        assert_eq!(parse_date_expression("before the 5th", wed()).date,
-                   Some(NaiveDate::from_ymd_opt(2026, 9, 5).unwrap()));
+        assert_eq!(
+            parse_date_expression("by the 30th", wed()).date,
+            Some(NaiveDate::from_ymd_opt(2026, 8, 30).unwrap())
+        );
+        assert_eq!(
+            parse_date_expression("before the 5th", wed()).date,
+            Some(NaiveDate::from_ymd_opt(2026, 9, 5).unwrap())
+        );
     }
 
     #[test]
     fn relative_words() {
-        assert_eq!(parse_date_expression("due tomorrow morning", wed()).date,
-                   Some(NaiveDate::from_ymd_opt(2026, 8, 27).unwrap()));
-        assert_eq!(parse_date_expression("in 3 days", wed()).date,
-                   Some(NaiveDate::from_ymd_opt(2026, 8, 29).unwrap()));
-        assert_eq!(parse_date_expression("this weekend", wed()).date,
-                   Some(NaiveDate::from_ymd_opt(2026, 8, 29).unwrap()));
+        assert_eq!(
+            parse_date_expression("due tomorrow morning", wed()).date,
+            Some(NaiveDate::from_ymd_opt(2026, 8, 27).unwrap())
+        );
+        assert_eq!(
+            parse_date_expression("in 3 days", wed()).date,
+            Some(NaiveDate::from_ymd_opt(2026, 8, 29).unwrap())
+        );
+        assert_eq!(
+            parse_date_expression("this weekend", wed()).date,
+            Some(NaiveDate::from_ymd_opt(2026, 8, 29).unwrap())
+        );
     }
 
     #[test]
@@ -305,8 +326,10 @@ mod tests {
     #[test]
     fn tomorrow_from_saturday_rolls_to_sunday() {
         let sat = NaiveDate::from_ymd_opt(2026, 8, 29).unwrap();
-        assert_eq!(parse_date_expression("tomorrow", sat).date,
-                   Some(NaiveDate::from_ymd_opt(2026, 8, 30).unwrap()));
+        assert_eq!(
+            parse_date_expression("tomorrow", sat).date,
+            Some(NaiveDate::from_ymd_opt(2026, 8, 30).unwrap())
+        );
     }
 
     #[test]
@@ -315,8 +338,10 @@ mod tests {
         // look forward to next Saturday. The implementation uses
         // days_until(Sat, today), which is 6 from Sunday.
         let sun = NaiveDate::from_ymd_opt(2026, 8, 30).unwrap();
-        assert_eq!(parse_date_expression("this weekend", sun).date,
-                   Some(NaiveDate::from_ymd_opt(2026, 9, 5).unwrap()));
+        assert_eq!(
+            parse_date_expression("this weekend", sun).date,
+            Some(NaiveDate::from_ymd_opt(2026, 9, 5).unwrap())
+        );
     }
 
     #[test]
@@ -325,8 +350,10 @@ mod tests {
         // return today (days_until returns 7 in that case). This is the
         // strict "future occurrence" contract.
         let thu = NaiveDate::from_ymd_opt(2026, 8, 27).unwrap();
-        assert_eq!(parse_date_expression("thursday", thu).date,
-                   Some(NaiveDate::from_ymd_opt(2026, 9, 3).unwrap()));
+        assert_eq!(
+            parse_date_expression("thursday", thu).date,
+            Some(NaiveDate::from_ymd_opt(2026, 9, 3).unwrap())
+        );
     }
 
     #[test]
@@ -344,24 +371,27 @@ mod tests {
         // intentional — most users mean "the next 30th" — but it is a
         // real footgun if anyone changes the resolution semantics.
         let feb = NaiveDate::from_ymd_opt(2026, 2, 15).unwrap();
-        assert_eq!(parse_date_expression("by the 30th", feb).date,
-                   Some(NaiveDate::from_ymd_opt(2026, 3, 30).unwrap()));
+        assert_eq!(
+            parse_date_expression("by the 30th", feb).date,
+            Some(NaiveDate::from_ymd_opt(2026, 3, 30).unwrap())
+        );
     }
 
     #[test]
     fn the_nth_year_boundary_rolls_into_next_year() {
         // December "by the 5th" should roll into next January.
         let dec = NaiveDate::from_ymd_opt(2026, 12, 20).unwrap();
-        assert_eq!(parse_date_expression("by the 5th", dec).date,
-                   Some(NaiveDate::from_ymd_opt(2027, 1, 5).unwrap()));
+        assert_eq!(
+            parse_date_expression("by the 5th", dec).date,
+            Some(NaiveDate::from_ymd_opt(2027, 1, 5).unwrap())
+        );
     }
 
     #[test]
     fn in_zero_days_is_today() {
         // Edge: "in 0 days" — current impl uses Duration::days(0), so this
         // is "today". Pin that contract.
-        assert_eq!(parse_date_expression("in 0 days", wed()).date,
-                   Some(wed()));
+        assert_eq!(parse_date_expression("in 0 days", wed()).date, Some(wed()));
     }
 
     #[test]

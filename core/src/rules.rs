@@ -62,10 +62,37 @@ fn re(pattern: &str) -> regex::Regex {
 }
 
 const ACTION_VERB_HINTS: &[&str] = &[
-    "owe", "pay", "repay", "send", "give", "return", "drop off", "book",
-    "cancel", "get", "call", "email", "text", "water", "cover", "reimburse",
-    "sign", "finish", "review", "bring", "fix", "chase", "remind", "tell",
-    "promised", "waiting", "forgot", "forget", "refund", "settle", "square",
+    "owe",
+    "pay",
+    "repay",
+    "send",
+    "give",
+    "return",
+    "drop off",
+    "book",
+    "cancel",
+    "get",
+    "call",
+    "email",
+    "text",
+    "water",
+    "cover",
+    "reimburse",
+    "sign",
+    "finish",
+    "review",
+    "bring",
+    "fix",
+    "chase",
+    "remind",
+    "tell",
+    "promised",
+    "waiting",
+    "forgot",
+    "forget",
+    "refund",
+    "settle",
+    "square",
 ];
 
 const CLAUSE_SPLIT: &str = r"[,;+.!?:]|\band also\b|\balso\b|\bplus\b";
@@ -124,7 +151,11 @@ pub fn extract_rules(text: &str, today: NaiveDate) -> Vec<RuleExtraction> {
             expected_date: dr.date,
             party_guess: party_guess.clone(),
             confidence: Confidence {
-                party: Some(if party_guess.is_some() { FieldConfidence::High } else { FieldConfidence::Low }),
+                party: Some(if party_guess.is_some() {
+                    FieldConfidence::High
+                } else {
+                    FieldConfidence::Low
+                }),
                 date: Some(match dr.date {
                     Some(_) => FieldConfidence::High,
                     None => FieldConfidence::Low,
@@ -234,7 +265,10 @@ pub fn classify_clause(clause: &str, full_text: &str, all_clauses: &[&str]) -> E
         if user_act_all && !p.other_owes_me.is_match(full_text) {
             return ExtractDirection::UserOwes;
         }
-        if has_first_all && !p.other_owes_me.is_match(full_text) && verb_after_first_person(full_text) {
+        if has_first_all
+            && !p.other_owes_me.is_match(full_text)
+            && verb_after_first_person(full_text)
+        {
             return ExtractDirection::UserOwes;
         }
         if p.other_owes_me.is_match(full_text) {
@@ -248,12 +282,40 @@ pub fn classify_clause(clause: &str, full_text: &str, all_clauses: &[&str]) -> E
 fn verb_after_first_person(text: &str) -> bool {
     let p = patterns();
     if let Some(caps) = p.verb_after_first.captures(text) {
-        let tail = caps.get(1).map(|m| m.as_str().to_lowercase()).unwrap_or_default();
+        let tail = caps
+            .get(1)
+            .map(|m| m.as_str().to_lowercase())
+            .unwrap_or_default();
         const VERBS: &[&str] = &[
-            "owe", "pay", "repay", "send", "give", "return", "bring", "book",
-            "cancel", "drop", "get", "fix", "email", "text", "call", "water",
-            "cover", "reimburse", "sort", "handle", "take", "deliver", "sign",
-            "finish", "review", "provide", "go", "do", "make",
+            "owe",
+            "pay",
+            "repay",
+            "send",
+            "give",
+            "return",
+            "bring",
+            "book",
+            "cancel",
+            "drop",
+            "get",
+            "fix",
+            "email",
+            "text",
+            "call",
+            "water",
+            "cover",
+            "reimburse",
+            "sort",
+            "handle",
+            "take",
+            "deliver",
+            "sign",
+            "finish",
+            "review",
+            "provide",
+            "go",
+            "do",
+            "make",
         ];
         if VERBS.iter().any(|v| {
             regex::Regex::new(&format!(r"\b{}\b", v))
@@ -271,14 +333,41 @@ fn verb_after_first_person(text: &str) -> bool {
 fn build_description(clause: &str) -> String {
     let mut s = clause.trim().to_string();
     let strip_prefixes = [
-        "ok so ", "so ", "and so ", "note to self ", "reminder to self ",
-        "need to ", "needs to ", "must ", "have to ", "having to ", "gonna ",
-        "i need to ", "i must ", "i have to ", "i'll ", "i am going to ",
-        "i'm going to ", "i should ", "should really ", "should ", "keep forgetting to ",
-        "still owe ", "owe ", "i still owe ", "i owe ", "told ", "promised ",
-        "remember to ", "don't forget to ", "dont forget to ",
-        "keep forgetting to ", "i keep forgetting to ", "should really get around to ",
-        "really get around to ", "get around to ",
+        "ok so ",
+        "so ",
+        "and so ",
+        "note to self ",
+        "reminder to self ",
+        "need to ",
+        "needs to ",
+        "must ",
+        "have to ",
+        "having to ",
+        "gonna ",
+        "i need to ",
+        "i must ",
+        "i have to ",
+        "i'll ",
+        "i am going to ",
+        "i'm going to ",
+        "i should ",
+        "should really ",
+        "should ",
+        "keep forgetting to ",
+        "still owe ",
+        "owe ",
+        "i still owe ",
+        "i owe ",
+        "told ",
+        "promised ",
+        "remember to ",
+        "don't forget to ",
+        "dont forget to ",
+        "keep forgetting to ",
+        "i keep forgetting to ",
+        "should really get around to ",
+        "really get around to ",
+        "get around to ",
     ];
     let lower = s.to_lowercase();
     for pre in strip_prefixes {
@@ -296,7 +385,6 @@ fn build_description(clause: &str) -> String {
     s.trim().to_string()
 }
 
-
 /// Port of Python `assign_direction`: pick the clause most overlapping the
 /// description tokens, classify it, apply chase-continuation and
 /// addressee-header rules.
@@ -312,13 +400,19 @@ pub fn assign_direction(text: &str, desc_tokens: &[&str]) -> ExtractDirection {
     let p = patterns();
     let addressed_other = p.addressee_header.is_match(text);
     let clause_re = regex::Regex::new(CLAUSE_SPLIT).unwrap();
-    let clauses: Vec<&str> = clause_re.split(text).map(str::trim).filter(|c| !c.is_empty()).collect();
+    let clauses: Vec<&str> = clause_re
+        .split(text)
+        .map(str::trim)
+        .filter(|c| !c.is_empty())
+        .collect();
 
     let dtoks: Vec<String> = desc_tokens.iter().map(|t| t.to_lowercase()).collect();
     let mut candidates: Vec<(usize, usize, &str)> = Vec::new();
     for c in &clauses {
         let w = normalize_tokens(c);
-        if w.len() < 3 { continue; }
+        if w.len() < 3 {
+            continue;
+        }
         let overlap = w.iter().filter(|x| dtoks.contains(x)).count();
         candidates.push((overlap, w.len(), c));
     }
@@ -330,7 +424,9 @@ pub fn assign_direction(text: &str, desc_tokens: &[&str]) -> ExtractDirection {
         }
     }
     candidates.sort_by(|a, b| b.0.cmp(&a.0).then(b.1.cmp(&a.1)));
-    if candidates.is_empty() { return ExtractDirection::Unclear; }
+    if candidates.is_empty() {
+        return ExtractDirection::Unclear;
+    }
     let best = candidates[0].2;
 
     let mut verdict = classify_clause(best, text, &clauses);
@@ -378,8 +474,7 @@ mod parity_tests {
     #[test]
     fn python_parity_direction_suite() {
         let fx: serde_json::Value = serde_json::from_str(FIXTURE).unwrap();
-        let cases: Vec<FixtureCase> =
-            serde_json::from_value(fx["cases"].clone()).unwrap();
+        let cases: Vec<FixtureCase> = serde_json::from_value(fx["cases"].clone()).unwrap();
         assert_eq!(cases.len(), 42);
         let mut ok = 0;
         let mut unc = 0;
@@ -427,8 +522,12 @@ mod parity_tests {
             today,
         );
         assert_eq!(out.len(), 2, "{out:?}");
-        assert!(out.iter().any(|e| e.direction == ExtractDirection::UserOwes));
-        assert!(out.iter().any(|e| e.direction == ExtractDirection::OwedToUser));
+        assert!(out
+            .iter()
+            .any(|e| e.direction == ExtractDirection::UserOwes));
+        assert!(out
+            .iter()
+            .any(|e| e.direction == ExtractDirection::OwedToUser));
     }
 
     #[test]

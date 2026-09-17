@@ -93,9 +93,7 @@ const FEW_SHOTS: &[(&str, &str)] = &[
 
 pub fn build_prompt(input_text: &str, today: NaiveDate) -> String {
     let sys = SYSTEM_PROMPT.replace("{TODAY}", &today.to_string());
-    let mut parts = vec![format!(
-        "<|im_start|>system\n{sys}<|im_end|>\n"
-    )];
+    let mut parts = vec![format!("<|im_start|>system\n{sys}<|im_end|>\n")];
     for (u, a) in FEW_SHOTS {
         parts.push(format!("<|im_start|>user\n{u}<|im_end|>\n"));
         parts.push(format!("<|im_start|>assistant\n{a}<|im_end|>\n"));
@@ -175,11 +173,7 @@ pub fn extract_neural(
     }
 }
 
-fn run_inference(
-    model_path: &str,
-    prompt: &str,
-    max_tokens: u32,
-) -> Result<String, String> {
+fn run_inference(model_path: &str, prompt: &str, max_tokens: u32) -> Result<String, String> {
     use llama_cpp_2::context::params::LlamaContextParams;
     use llama_cpp_2::llama_backend::LlamaBackend;
     use llama_cpp_2::llama_batch::LlamaBatch;
@@ -187,8 +181,7 @@ fn run_inference(
     use llama_cpp_2::model::AddBos;
     use llama_cpp_2::sampling::LlamaSampler;
 
-    let backend =
-        LlamaBackend::init().map_err(|e| format!("backend init: {e:?}"))?;
+    let backend = LlamaBackend::init().map_err(|e| format!("backend init: {e:?}"))?;
     let model_params = pin!(LlamaModelParams::default());
     let model = llama_cpp_2::model::LlamaModel::load_from_file(
         &backend,
@@ -201,18 +194,22 @@ fn run_inference(
         .with_n_ctx(Some(NonZeroU32::new(4096).ok_or("bad ctx")?))
         .with_n_threads(6)
         .with_n_threads_batch(6);
-    let mut ctx = model.new_context(&backend, ctx_params).map_err(|e| e.to_string())?;
+    let mut ctx = model
+        .new_context(&backend, ctx_params)
+        .map_err(|e| e.to_string())?;
 
-    let tokens = model.str_to_token(prompt, AddBos::Always).map_err(|e| e.to_string())?;
+    let tokens = model
+        .str_to_token(prompt, AddBos::Always)
+        .map_err(|e| e.to_string())?;
 
-    let mut sampler = LlamaSampler::chain_simple([
-        LlamaSampler::dist(1234),
-    ]);
+    let mut sampler = LlamaSampler::chain_simple([LlamaSampler::dist(1234)]);
 
     let mut batch = LlamaBatch::new(std::cmp::max(512, tokens.len()), 1);
     let last_index = (tokens.len() - 1) as i32;
     for (i, token) in (0_i32..).zip(tokens.into_iter()) {
-        batch.add(token, i, &[0], i == last_index).map_err(|e| e.to_string())?;
+        batch
+            .add(token, i, &[0], i == last_index)
+            .map_err(|e| e.to_string())?;
     }
     ctx.decode(&mut batch).map_err(|e| e.to_string())?;
 
@@ -225,11 +222,14 @@ fn run_inference(
         if model.is_eog_token(tok) {
             break;
         }
-        let piece = model.token_to_piece(tok, &mut decoder, false, None)
+        let piece = model
+            .token_to_piece(tok, &mut decoder, false, None)
             .map_err(|e| e.to_string())?;
         out.push_str(&piece);
         batch.clear();
-        batch.add(tok, n_cur, &[0], true).map_err(|e| e.to_string())?;
+        batch
+            .add(tok, n_cur, &[0], true)
+            .map_err(|e| e.to_string())?;
         n_cur += 1;
         ctx.decode(&mut batch).map_err(|e| e.to_string())?;
     }
@@ -247,11 +247,15 @@ fn parse_candidates(raw: &str) -> NeuralOutcome {
     }
     match serde_json::from_str::<Vec<NeuralCandidate>>(&raw[s..=e]) {
         Ok(v) => {
-            if v.iter().any(|c| c.description.is_none() || c.direction.is_none()) {
+            if v.iter()
+                .any(|c| c.description.is_none() || c.direction.is_none())
+            {
                 NeuralOutcome::Unusable("candidate missing required fields".into())
             } else {
                 NeuralOutcome::Candidates(
-                    v.into_iter().filter(|c| c.commitment_found && c.description.is_some()).collect(),
+                    v.into_iter()
+                        .filter(|c| c.commitment_found && c.description.is_some())
+                        .collect(),
                 )
             }
         }
@@ -264,16 +268,27 @@ fn parse_candidates(raw: &str) -> NeuralOutcome {
 // ---------------------------------------------------------------------------
 
 const DATEISH: &[&str] = &[
-    "today", "tomorrow", "tonight", "monday", "tuesday", "wednesday", "thursday",
-    "friday", "saturday", "sunday", "week", "month", "days", "soon",
+    "today",
+    "tomorrow",
+    "tonight",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+    "week",
+    "month",
+    "days",
+    "soon",
 ];
 
 pub fn cross_check_candidate(c: &NeuralCandidate, source_text: &str) -> CrossChecked {
     let lower = source_text.to_lowercase();
 
     // DATE: downgrade unless some date-like evidence exists in the source.
-    let date_evidence = DATEISH.iter().any(|w| lower.contains(w))
-        || regex_lite_iso(&lower);
+    let date_evidence = DATEISH.iter().any(|w| lower.contains(w)) || regex_lite_iso(&lower);
 
     // PARTY: downgrade if the claimed party name never appears in the source.
     let party_evidence = c
@@ -283,7 +298,9 @@ pub fn cross_check_candidate(c: &NeuralCandidate, source_text: &str) -> CrossChe
             let pl = p.to_lowercase();
             pl.is_empty()
                 || lower.contains(&pl)
-                || pl.split_whitespace().any(|word| word.len() > 2 && lower.contains(word))
+                || pl
+                    .split_whitespace()
+                    .any(|word| word.len() > 2 && lower.contains(word))
         })
         .unwrap_or(false);
 
@@ -302,8 +319,16 @@ pub fn cross_check_candidate(c: &NeuralCandidate, source_text: &str) -> CrossChe
         ),
         expected_date: c.expected_date.clone(),
         confidence: Confidence {
-            party: Some(if party_evidence { FieldConfidence::High } else { FieldConfidence::Low }),
-            date: Some(if date_evidence { FieldConfidence::High } else { FieldConfidence::Low }),
+            party: Some(if party_evidence {
+                FieldConfidence::High
+            } else {
+                FieldConfidence::Low
+            }),
+            date: Some(if date_evidence {
+                FieldConfidence::High
+            } else {
+                FieldConfidence::Low
+            }),
             overall: Some(match c.overall_confidence.as_deref() {
                 Some("high") if date_evidence && party_evidence => FieldConfidence::High,
                 _ => FieldConfidence::Low,
@@ -393,32 +418,43 @@ pub struct NeuralExtractor {
 
 impl NeuralExtractor {
     pub fn new(cfg: BreakerConfig) -> Self {
-        Self { cfg: std::sync::Arc::new(cfg), state: std::sync::Arc::default() }
+        Self {
+            cfg: std::sync::Arc::new(cfg),
+            state: std::sync::Arc::default(),
+        }
     }
 
     /// Attempt neural extraction; fall back to rules on timeout/unavailability/
     /// unusable output. Returns candidates plus which path produced them.
-    pub fn extract(
-        &self,
-        text: &str,
-        today: NaiveDate,
-    ) -> (Vec<CrossChecked>, ProvenancePath) {
+    pub fn extract(&self, text: &str, today: NaiveDate) -> (Vec<CrossChecked>, ProvenancePath) {
         if self.state.lock().unwrap().is_open() {
-            return (self.rules_fallback(text, today), ProvenancePath::RuleFallbackBreakerOpen);
+            return (
+                self.rules_fallback(text, today),
+                ProvenancePath::RuleFallbackBreakerOpen,
+            );
         }
         match extract_neural(text, today, 700, self.cfg.timeout) {
             NeuralOutcome::Candidates(cands) => {
                 self.state.lock().unwrap().record_success();
-                let checked = cands.iter().map(|c| cross_check_candidate(c, text)).collect();
+                let checked = cands
+                    .iter()
+                    .map(|c| cross_check_candidate(c, text))
+                    .collect();
                 (checked, ProvenancePath::Model)
             }
             NeuralOutcome::TimedOut => {
                 self.state.lock().unwrap().record_failure(&self.cfg);
-                (self.rules_fallback(text, today), ProvenancePath::RuleFallbackTimeout)
+                (
+                    self.rules_fallback(text, today),
+                    ProvenancePath::RuleFallbackTimeout,
+                )
             }
             NeuralOutcome::Unavailable(_) | NeuralOutcome::Unusable(_) => {
                 self.state.lock().unwrap().record_failure(&self.cfg);
-                (self.rules_fallback(text, today), ProvenancePath::RuleFallbackFailure)
+                (
+                    self.rules_fallback(text, today),
+                    ProvenancePath::RuleFallbackFailure,
+                )
             }
         }
     }

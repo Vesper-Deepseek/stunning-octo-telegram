@@ -12,12 +12,13 @@ fn main() {
     let model_path = "REPLACE_WITH_YOUR_GGUF_MODEL_PATH";
     let backend = LlamaBackend::init().unwrap();
     let model_params = LlamaModelParams::default();
-    let model = LlamaModel::load_from_file(&backend, PathBuf::from(model_path), &model_params).unwrap();
-    
+    let model =
+        LlamaModel::load_from_file(&backend, PathBuf::from(model_path), &model_params).unwrap();
+
     let grammar = include_str!("extraction_grammar.gbnf");
     println!("Grammar length: {}", grammar.len());
     println!("First 200 chars: {}", &grammar[..200.min(grammar.len())]);
-    
+
     let sampler = LlamaSampler::grammar(&model, grammar, "root");
     match sampler {
         Ok(_) => println!("Grammar parsed successfully!"),
