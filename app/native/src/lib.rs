@@ -71,7 +71,9 @@ mod jni_bridge {
             day as u32,
         );
         let result = cstr_to_owned(out);
-        let _ = CString::from_raw(out);
+        if !out.is_null() {
+            drop(CString::from_raw(out as *mut c_char));
+        }
         string_to_jstring(env, &result.unwrap_or_default())
     }
 
@@ -113,16 +115,16 @@ mod jni_bridge {
         );
 
         if let Some(p) = desc_c {
-            unsafe { drop(CString::from_raw(p)) };
+            drop(CString::from_raw(p));
         }
         if let Some(p) = dir_c {
-            unsafe { drop(CString::from_raw(p)) };
+            drop(CString::from_raw(p));
         }
         if let Some(p) = date_c {
-            unsafe { drop(CString::from_raw(p)) };
+            drop(CString::from_raw(p));
         }
         if let Some(p) = party_c {
-            unsafe { drop(CString::from_raw(p)) };
+            drop(CString::from_raw(p));
         }
 
         result
@@ -147,12 +149,14 @@ mod jni_bridge {
             day as u32,
         );
         let result = cstr_to_owned(out);
-        let _ = CString::from_raw(out);
+        if !out.is_null() {
+            drop(CString::from_raw(out as *mut c_char));
+        }
         string_to_jstring(env, &result.unwrap_or_default())
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn JNI_OnLoad(mut vm: JavaVM, _reserved: *mut c_void) -> jint {
+    pub unsafe extern "C" fn JNI_OnLoad(vm: JavaVM, _reserved: *mut c_void) -> jint {
         let mut env_ptr: *mut c_void = ptr::null_mut();
         let vm_interface = (*(vm as *mut _JavaVM)).functions;
         let get_env = (*vm_interface).v1_2.GetEnv;
@@ -252,6 +256,9 @@ fn cstr_to_owned(s: *const c_char) -> Option<String> {
 
 #[no_mangle]
 pub extern "C" fn loose_ends_open(path: *const c_char) -> *mut StoreHandle {
+    if path.is_null() {
+        return ptr::null_mut();
+    }
     let cstr = unsafe { CStr::from_ptr(path) };
     let path_str = match cstr.to_str() {
         Ok(s) => s,
@@ -293,6 +300,9 @@ pub extern "C" fn loose_ends_ingest_rules(
     today_month: u32,
     today_day: u32,
 ) -> *mut c_char {
+    if handle.is_null() || text.is_null() {
+        return ptr::null_mut();
+    }
     let handle = unsafe { &*handle };
     let text = match cstr_to_owned(text) {
         Some(t) => t,
@@ -307,14 +317,19 @@ pub extern "C" fn loose_ends_ingest_rules(
         Ok(r) => r,
         Err(_) => return ptr::null_mut(),
     };
+    let entry_source_id = report.entry_source_id;
+    let draft_ids = report.draft_ids;
 
     let drafts = match handle.store.list_drafts() {
-        Ok(d) => d,
+        Ok(d) => d
+            .into_iter()
+            .filter(|draft| draft_ids.contains(&draft.id))
+            .collect::<Vec<_>>(),
         Err(_) => return ptr::null_mut(),
     };
 
     let json = serde_json::json!({
-        "entry_source_id": report.entry_source_id,
+        "entry_source_id": entry_source_id,
         "drafts": drafts.into_iter().map(|d| {
             let confidence: models::Confidence = serde_json::from_str(&d.confidence_json)
                 .unwrap_or(models::Confidence { party: None, date: None, overall: None });
@@ -355,23 +370,27 @@ pub extern "C" fn loose_ends_confirm_draft(
     date_override: *const c_char,
     party_override: *const c_char,
 ) -> i64 {
+    if handle.is_null() || draft_id <= 0 {
+        return 0;
+    }
     let handle = unsafe { &*handle };
     let desc = cstr_to_owned(description_override);
     let dir_str = cstr_to_owned(direction_override);
-    let date = cstr_to_owned(date_override);
-    let party = cstr_to_owned(party_override);
+    let date = cstr_to_owned(date_override).filter(|s| !s.is_empty());
+    let party = cstr_to_owned(party_override).filter(|s| !s.is_empty());
 
-    let dir = dir_str.as_deref().map(|s| match s {
-        "user_owes" => CoreDirection::UserOwes,
-        "owed_to_user" => CoreDirection::OwedToUser,
-        _ => CoreDirection::UserOwes,
-    }).unwrap_or(CoreDirection::UserOwes);
+    let dir = match dir_str.as_deref() {
+        Some("user_owes") => CoreDirection::UserOwes,
+        Some("owed_to_user") => CoreDirection::OwedToUser,
+        _ => return 0,
+    };
+    let expected_date_override = date.as_deref().map(Some);
 
     match handle.store.confirm_draft(
         draft_id,
         desc.as_deref(),
         Some(dir),
-        Some(date.as_deref()),
+        expected_date_override,
         party.as_deref(),
     ) {
         Ok(Some(id)) => id as i64,
@@ -387,6 +406,9 @@ pub extern "C" fn loose_ends_list_open(
     today_month: u32,
     today_day: u32,
 ) -> *mut c_char {
+    if handle.is_null() || direction.is_null() {
+        return ptr::null_mut();
+    }
     let handle = unsafe { &*handle };
     let dir_str = match cstr_to_owned(direction) {
         Some(s) => s,
@@ -394,7 +416,8 @@ pub extern "C" fn loose_ends_list_open(
     };
     let dir = match dir_str.as_str() {
         "user_owes" => CoreDirection::UserOwes,
-        _ => CoreDirection::OwedToUser,
+        "owed_to_user" => CoreDirection::OwedToUser,
+        _ => return ptr::null_mut(),
     };
     let today = match NaiveDate::from_ymd_opt(today_year, today_month, today_day) {
         Some(d) => d,
@@ -405,12 +428,16 @@ pub extern "C" fn loose_ends_list_open(
     match handle.store.view(dir, today, &cfg) {
         Ok(items) => {
             let json: Vec<serde_json::Value> = items.into_iter().map(|(c, a)| {
+                let party = match c.direction {
+                    CoreDirection::UserOwes => c.owed_to,
+                    CoreDirection::OwedToUser => c.owed_by,
+                };
                 serde_json::json!({
                     "id": c.id,
                     "description": c.description,
                     "direction": format!("{:?}", c.direction).to_lowercase(),
                     "expected_date": c.expected_date,
-                    "party": c.owed_to,
+                    "party": party,
                     "aging_action": match a {
                         PlanAction::SurfaceNow => "surface",
                         PlanAction::Snooze { .. } => "snooze",
@@ -437,25 +464,36 @@ pub extern "C" fn loose_ends_create_commitment(
     expected_date: *const c_char,
     party: *const c_char,
 ) -> i64 {
+    if handle.is_null() || description.is_null() || direction.is_null() {
+        return 0;
+    }
     let handle = unsafe { &*handle };
     let desc = match cstr_to_owned(description) {
+        Some(s) if !s.is_empty() => s,
+        _ => return 0,
+    };
+    let dir_str = match cstr_to_owned(direction) {
         Some(s) => s,
         None => return 0,
     };
-    let dir_str = cstr_to_owned(direction);
-    let dir = match dir_str.as_deref() {
-        Some("user_owes") => CoreDirection::UserOwes,
-        _ => CoreDirection::OwedToUser,
+    let dir = match dir_str.as_str() {
+        "user_owes" => CoreDirection::UserOwes,
+        "owed_to_user" => CoreDirection::OwedToUser,
+        _ => return 0,
     };
-    let date = cstr_to_owned(expected_date);
-    let party = cstr_to_owned(party);
+    let date = cstr_to_owned(expected_date).filter(|s| !s.is_empty());
+    let party = cstr_to_owned(party).filter(|s| !s.is_empty());
+    let (owed_by_party, owed_to_party) = match dir {
+        CoreDirection::UserOwes => (Some("user"), party.as_deref()),
+        CoreDirection::OwedToUser => (party.as_deref(), Some("user")),
+    };
 
     let new = NewCommitment {
         description: &desc,
         direction: dir,
         expected_date: date.as_deref(),
-        owed_by_party: Some("user"),
-        owed_to_party: party.as_deref(),
+        owed_by_party,
+        owed_to_party,
         provenance: Provenance::Manual,
         confidence: Default::default(),
     };
