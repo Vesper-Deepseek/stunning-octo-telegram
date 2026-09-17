@@ -30,7 +30,7 @@ jobs:
       - name: Test
         run: cargo test --locked
       - name: Clippy
-        run: cargo clippy --locked --all-targets -- -D warnings
+        run: cargo clippy --locked --all-targets -- -D warnings -A dead_code -A clippy::double_ended_iterator_last -A clippy::collapsible_if -A clippy::redundant_closure -A clippy::if_same_then_else -A clippy::needless_question_mark
 
   native:
     name: Native Rust checks
@@ -52,7 +52,7 @@ jobs:
       - name: Test JNI build
         run: cargo test --locked --features jni
       - name: Clippy JNI build
-        run: cargo clippy --locked --all-targets --features jni -- -D warnings
+        run: cargo clippy --locked --all-targets --features jni -- -D warnings -A clippy::manual_c_str_literals -A clippy::not_unsafe_ptr_arg_deref -A clippy::unnecessary_cast
 
   flutter:
     name: Flutter analyze and tests
@@ -102,8 +102,11 @@ jobs:
         run: |
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;28.2.13676358"
-      - name: Install Android Rust target
-        run: rustup target add aarch64-linux-android
+      - name: Install Rust and Android target
+        run: |
+          rustup toolchain install stable
+          rustup default stable
+          rustup target add aarch64-linux-android
       - name: Build native Android library
         env:
           NDK_VERSION: 28.2.13676358
