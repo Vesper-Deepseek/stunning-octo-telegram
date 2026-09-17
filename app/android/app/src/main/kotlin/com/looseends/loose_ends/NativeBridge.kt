@@ -21,16 +21,28 @@ class NativeBridge private constructor() {
         }
     }
 
-    fun ingestRules(text: String, year: Int, month: Int, day: Int): JSONArray? {
+    fun ingestRules(text: String, year: Int, month: Int, day: Int): List<Map<String, Any?>> {
         val handle = store
-        if (handle == 0L) return null
-        val json = looseEndsIngestRules(handle, text, year, month, day) ?: return null
+        if (handle == 0L) return emptyList()
+        val json = looseEndsIngestRules(handle, text, year, month, day) ?: return emptyList()
         return try {
             val obj = JSONObject(json)
-            val drafts = obj.optJSONArray("drafts") ?: return JSONArray()
-            drafts
+            val drafts = obj.optJSONArray("drafts") ?: JSONArray()
+            List(drafts.length()) { index ->
+                val draft = drafts.optJSONObject(index) ?: JSONObject()
+                mapOf(
+                    "id" to draft.optLong("id", 0L),
+                    "description" to draft.optString("description"),
+                    "direction" to draft.optString("direction"),
+                    "expected_date" to draft.optNullableString("expected_date"),
+                    "party" to draft.optNullableString("party"),
+                    "party_confidence" to draft.optString("party_confidence", "low"),
+                    "date_confidence" to draft.optString("date_confidence", "low"),
+                    "overall_confidence" to draft.optString("overall_confidence", "low"),
+                )
+            }
         } catch (e: Exception) {
-            null
+            emptyList()
         }
     }
 
@@ -48,15 +60,31 @@ class NativeBridge private constructor() {
         )
     }
 
-    fun listOpen(direction: String, year: Int, month: Int, day: Int): JSONArray? {
+    fun listOpen(direction: String, year: Int, month: Int, day: Int): List<Map<String, Any?>> {
         val handle = store
-        if (handle == 0L) return null
-        val json = looseEndsListOpen(handle, direction, year, month, day) ?: return null
+        if (handle == 0L) return emptyList()
+        val json = looseEndsListOpen(handle, direction, year, month, day) ?: return emptyList()
         return try {
-            JSONArray(json)
+            val items = JSONArray(json)
+            List(items.length()) { index ->
+                val item = items.optJSONObject(index) ?: JSONObject()
+                mapOf(
+                    "id" to item.optLong("id", 0L),
+                    "description" to item.optString("description"),
+                    "direction" to item.optString("direction"),
+                    "expected_date" to item.optNullableString("expected_date"),
+                    "party" to item.optNullableString("party"),
+                    "aging_action" to item.optString("aging_action"),
+                    "created_at" to item.optString("created_at"),
+                )
+            }
         } catch (e: Exception) {
-            null
+            emptyList()
         }
+    }
+
+    private fun JSONObject.optNullableString(name: String): String? {
+        return if (!has(name) || isNull(name)) null else optString(name)
     }
 
     companion object {
