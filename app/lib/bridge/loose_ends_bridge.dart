@@ -9,7 +9,7 @@ import 'loose_ends_bridge_linux.dart';
 /// Bridge to the Rust core.
 ///
 /// On Linux desktop, uses dart:ffi to call the native shared library directly.
-/// On Android, falls back to the MethodChannel/JNI bridge.
+/// On Android, uses the MethodChannel/JNI bridge.
 class LooseEndsBridge {
   static const _channel = MethodChannel('com.looseends/core');
   static bool _initialized = false;
@@ -32,34 +32,29 @@ class LooseEndsBridge {
     }
   }
 
+  static Draft _draftFromMap(Map<dynamic, dynamic> m) {
+    return Draft(
+      id: (m['id'] as num?)?.toInt(),
+      description: m['description'] as String,
+      direction: m['direction'] as String,
+      expectedDate: m['expected_date'] as String?,
+      party: m['party'] as String?,
+      partyConfidence: m['party_confidence'] as String,
+      dateConfidence: m['date_confidence'] as String,
+      overallConfidence: m['overall_confidence'] as String,
+    );
+  }
+
   static Future<List<Draft>> ingestText(String text) async {
     if (!_initialized) return _fallbackIngest(text);
     if (Platform.isLinux) {
       final maps = LooseEndsBridgeLinux.ingestText(text);
-      return maps.map((m) => Draft(
-            description: m['description'] as String,
-            direction: m['direction'] as String,
-            expectedDate: m['expected_date'] as String?,
-            party: m['party'] as String?,
-            partyConfidence: m['party_confidence'] as String,
-            dateConfidence: m['date_confidence'] as String,
-            overallConfidence: m['overall_confidence'] as String,
-          )).toList();
+      return maps.map(_draftFromMap).toList();
     }
 
     try {
       final result = await _channel.invokeMethod('ingestText', {'text': text});
-      final drafts = (result as List).cast<Map>().map((m) {
-        return Draft(
-          description: m['description'] as String,
-          direction: m['direction'] as String,
-          expectedDate: m['expected_date'] as String?,
-          party: m['party'] as String?,
-          partyConfidence: m['party_confidence'] as String,
-          dateConfidence: m['date_confidence'] as String,
-          overallConfidence: m['overall_confidence'] as String,
-        );
-      }).toList();
+      final drafts = (result as List).cast<Map>().map(_draftFromMap).toList();
       return drafts;
     } on PlatformException {
       return _fallbackIngest(text);
@@ -75,9 +70,12 @@ class LooseEndsBridge {
     String? dateOverride,
   }) async {
     if (!_initialized) return null;
+    final draftId = draft.id ?? 0;
+
     if (Platform.isLinux) {
       return LooseEndsBridgeLinux.confirmDraft(
         <String, dynamic>{
+          'id': draftId,
           'description': draft.description,
           'direction': draft.direction,
           'expected_date': draft.expectedDate,
@@ -91,6 +89,7 @@ class LooseEndsBridge {
 
     try {
       final result = await _channel.invokeMethod('confirmDraft', {
+        'draftId': draftId,
         'description': descriptionOverride ?? draft.description,
         'direction': (directionOverride ?? Direction.fromString(draft.direction)).name,
         'expected_date': dateOverride ?? draft.expectedDate,
@@ -122,7 +121,7 @@ class LooseEndsBridge {
     try {
       final result = await _channel.invokeMethod('listOpen', {'direction': dir.name});
       return (result as List).cast<Map>().map((m) => CommitmentView(
-            id: m['id'] as int,
+            id: (m['id'] as num).toInt(),
             description: m['description'] as String,
             direction: Direction.fromString(m['direction'] as String),
             expectedDate: m['expected_date'] as String?,
