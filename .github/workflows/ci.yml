@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   rust:
-    name: Rust checks
+    name: Core Rust checks
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -32,6 +32,28 @@ jobs:
       - name: Clippy
         run: cargo clippy --locked --all-targets -- -D warnings
 
+  native:
+    name: Native Rust checks
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: app/native
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Check JNI build
+        run: cargo check --locked --features jni
+      - name: Test JNI build
+        run: cargo test --locked --features jni
+      - name: Clippy JNI build
+        run: cargo clippy --locked --all-targets --features jni -- -D warnings
+
   flutter:
     name: Flutter analyze and tests
     runs-on: ubuntu-24.04
@@ -44,7 +66,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.47.4'
           cache: true
       - name: Verify toolchain
         run: flutter --version
@@ -58,7 +80,7 @@ jobs:
   android:
     name: Android release APK
     runs-on: ubuntu-24.04
-    needs: [rust, flutter]
+    needs: [rust, native, flutter]
     defaults:
       run:
         working-directory: app
@@ -74,16 +96,35 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.47.4'
           cache: true
-      - name: Enable Android SDK components
+      - name: Install Android SDK components
         run: |
           yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
-      - name: Get packages
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;28.2.13676358"
+      - name: Install Android Rust target
+        run: rustup target add aarch64-linux-android
+      - name: Build native Android library
+        working-directory: app
+        env:
+          NDK_VERSION: 28.2.13676358
+          ANDROID_API: 24
+        run: |
+          NDK_DIR="${ANDROID_HOME}/ndk/${NDK_VERSION}"
+          TOOLCHAIN="${NDK_DIR}/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER="${TOOLCHAIN}/aarch64-linux-android${ANDROID_API}-clang" \
+          CC_aarch64_linux_android="${TOOLCHAIN}/aarch64-linux-android${ANDROID_API}-clang" \
+          AR_aarch64_linux_android="${TOOLCHAIN}/llvm-ar" \
+          cargo build --manifest-path native/Cargo.toml --locked --release --target aarch64-linux-android --features jni
+          mkdir -p android/app/src/main/jniLibs/arm64-v8a
+          cp native/target/aarch64-linux-android/release/libloose_ends_native.so \
+            android/app/src/main/jniLibs/arm64-v8a/libloose_ends_native.so
+      - name: Get Flutter packages
         run: flutter pub get
       - name: Build release APK
         run: flutter build apk --release --target-platform android-arm64
+      - name: Verify native library is packaged
+        run: unzip -l build/app/outputs/flutter-apk/app-release.apk | grep -F 'lib/arm64-v8a/libloose_ends_native.so'
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
