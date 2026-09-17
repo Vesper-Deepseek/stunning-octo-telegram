@@ -96,9 +96,7 @@ pub fn plan(c: &Commitment, today: NaiveDate, cfg: &PlannerConfig) -> PlanAction
         Status::Open => match c.expected_date.as_deref().and_then(parse_iso) {
             Some(due) => {
                 let days_until = (due - today).num_days();
-                if days_until < 0 {
-                    PlanAction::SurfaceNow
-                } else if days_until <= cfg.pre_due_surface_days {
+                if days_until < 0 || days_until <= cfg.pre_due_surface_days {
                     PlanAction::SurfaceNow
                 } else {
                     PlanAction::Snooze { until: Some(due) }
@@ -108,8 +106,6 @@ pub fn plan(c: &Commitment, today: NaiveDate, cfg: &PlannerConfig) -> PlanAction
                 let age = (today - created_date(c)).num_days();
                 if age >= cfg.surface_after_days {
                     PlanAction::SurfaceNow
-                } else if age <= cfg.quiet_days {
-                    PlanAction::Snooze { until: None }
                 } else {
                     PlanAction::Snooze { until: None }
                 }

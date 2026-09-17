@@ -177,24 +177,30 @@ mod jni_bridge {
 
         let methods = [
             JNINativeMethod {
-                name: b"looseEndsOpen\0".as_ptr() as *mut c_char,
-                signature: b"(Ljava/lang/String;)J\0".as_ptr() as *mut c_char,
+                name: c"looseEndsOpen".as_ptr().cast_mut(),
+                signature: c"(Ljava/lang/String;)J".as_ptr().cast_mut(),
                 fnPtr: native_loose_ends_open as *mut c_void,
             },
             JNINativeMethod {
-                name: b"looseEndsIngestRules\0".as_ptr() as *mut c_char,
-                signature: b"(JLjava/lang/String;III)Ljava/lang/String;\0".as_ptr() as *mut c_char,
+                name: c"looseEndsIngestRules".as_ptr().cast_mut(),
+                signature: c"(JLjava/lang/String;III)Ljava/lang/String;"
+                    .as_ptr()
+                    .cast_mut(),
                 fnPtr: native_loose_ends_ingest_rules as *mut c_void,
             },
             JNINativeMethod {
-                name: b"looseEndsConfirmDraft\0".as_ptr() as *mut c_char,
-                signature: b"(JJLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)J\0"
-                    .as_ptr() as *mut c_char,
+                name: c"looseEndsConfirmDraft".as_ptr().cast_mut(),
+                signature:
+                    c"(JJLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)J"
+                        .as_ptr()
+                        .cast_mut(),
                 fnPtr: native_loose_ends_confirm_draft as *mut c_void,
             },
             JNINativeMethod {
-                name: b"looseEndsListOpen\0".as_ptr() as *mut c_char,
-                signature: b"(JLjava/lang/String;III)Ljava/lang/String;\0".as_ptr() as *mut c_char,
+                name: c"looseEndsListOpen".as_ptr().cast_mut(),
+                signature: c"(JLjava/lang/String;III)Ljava/lang/String;"
+                    .as_ptr()
+                    .cast_mut(),
                 fnPtr: native_loose_ends_list_open as *mut c_void,
             },
         ];
@@ -254,7 +260,7 @@ fn cstr_to_owned(s: *const c_char) -> Option<String> {
 // ===========================================================================
 
 #[no_mangle]
-pub extern "C" fn loose_ends_open(path: *const c_char) -> *mut StoreHandle {
+pub unsafe extern "C" fn loose_ends_open(path: *const c_char) -> *mut StoreHandle {
     let cstr = unsafe { CStr::from_ptr(path) };
     let path_str = match cstr.to_str() {
         Ok(s) => s,
@@ -267,7 +273,7 @@ pub extern "C" fn loose_ends_open(path: *const c_char) -> *mut StoreHandle {
 }
 
 #[no_mangle]
-pub extern "C" fn loose_ends_open_in_memory() -> *mut StoreHandle {
+pub unsafe extern "C" fn loose_ends_open_in_memory() -> *mut StoreHandle {
     match Store::open_in_memory() {
         Ok(store) => Box::into_raw(Box::new(StoreHandle { store })),
         Err(_) => ptr::null_mut(),
@@ -275,21 +281,21 @@ pub extern "C" fn loose_ends_open_in_memory() -> *mut StoreHandle {
 }
 
 #[no_mangle]
-pub extern "C" fn loose_ends_close(handle: *mut StoreHandle) {
+pub unsafe extern "C" fn loose_ends_close(handle: *mut StoreHandle) {
     if !handle.is_null() {
         unsafe { drop(Box::from_raw(handle)) };
     }
 }
 
 #[no_mangle]
-pub extern "C" fn loose_ends_free(s: *mut c_char) {
+pub unsafe extern "C" fn loose_ends_free(s: *mut c_char) {
     if !s.is_null() {
         unsafe { drop(CString::from_raw(s)) };
     }
 }
 
 #[no_mangle]
-pub extern "C" fn loose_ends_ingest_rules(
+pub unsafe extern "C" fn loose_ends_ingest_rules(
     handle: *mut StoreHandle,
     text: *const c_char,
     today_year: i32,
@@ -350,7 +356,7 @@ pub extern "C" fn loose_ends_ingest_rules(
 }
 
 #[no_mangle]
-pub extern "C" fn loose_ends_confirm_draft(
+pub unsafe extern "C" fn loose_ends_confirm_draft(
     handle: *mut StoreHandle,
     draft_id: i64,
     description_override: *const c_char,
@@ -386,7 +392,7 @@ pub extern "C" fn loose_ends_confirm_draft(
 }
 
 #[no_mangle]
-pub extern "C" fn loose_ends_list_open(
+pub unsafe extern "C" fn loose_ends_list_open(
     handle: *mut StoreHandle,
     direction: *const c_char,
     today_year: i32,
@@ -439,7 +445,7 @@ pub extern "C" fn loose_ends_list_open(
 }
 
 #[no_mangle]
-pub extern "C" fn loose_ends_create_commitment(
+pub unsafe extern "C" fn loose_ends_create_commitment(
     handle: *mut StoreHandle,
     description: *const c_char,
     direction: *const c_char,
@@ -468,8 +474,5 @@ pub extern "C" fn loose_ends_create_commitment(
         provenance: Provenance::Manual,
         confidence: Default::default(),
     };
-    match handle.store.create_commitment(new) {
-        Ok(id) => id,
-        Err(_) => 0,
-    }
+    handle.store.create_commitment(new).unwrap_or_default()
 }
