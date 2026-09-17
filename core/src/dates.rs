@@ -125,8 +125,7 @@ fn has_next_qualifier(hay: &str, weekday: &str) -> bool {
         let before = &hay[..pos];
         let last_word = before
             .split(|c: char| !c.is_ascii_alphanumeric())
-            .filter(|t| !t.is_empty())
-            .last()
+            .rfind(|t| !t.is_empty())
             .unwrap_or("");
         return last_word == "next";
     }
@@ -162,19 +161,17 @@ fn simple_number_after_in(text: &str, unit: &str) -> Option<i64> {
 fn capture_day_of_month(text: &str) -> Option<u32> {
     let toks: Vec<&str> = text.split(|c: char| !c.is_ascii_alphanumeric()).collect();
     for i in 0..toks.len() {
-        if toks[i] == "the" {
-            if i + 1 < toks.len() {
-                let raw = toks[i + 1];
-                let num: String = raw.chars().take_while(|c| c.is_ascii_digit()).collect();
-                if !num.is_empty() {
-                    if let Ok(d) = num.parse::<u32>() {
-                        if (1..=31).contains(&d) {
-                            return Some(d);
-                        }
+        if toks[i] == "the" && i + 1 < toks.len() {
+            let raw = toks[i + 1];
+            let num: String = raw.chars().take_while(|c| c.is_ascii_digit()).collect();
+            if !num.is_empty() {
+                if let Ok(d) = num.parse::<u32>() {
+                    if (1..=31).contains(&d) {
+                        return Some(d);
                     }
                 }
-                // ordinal suffixes: 30th, 1st, 2nd, 3rd handled by take_while digits
             }
+            // ordinal suffixes: 30th, 1st, 2nd, 3rd handled by take_while digits
         }
     }
     None

@@ -152,7 +152,7 @@ mod jni_bridge {
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn JNI_OnLoad(mut vm: JavaVM, _reserved: *mut c_void) -> jint {
+    pub unsafe extern "C" fn JNI_OnLoad(vm: JavaVM, _reserved: *mut c_void) -> jint {
         let mut env_ptr: *mut c_void = ptr::null_mut();
         let vm_interface = (*(vm as *mut _JavaVM)).functions;
         let get_env = (*vm_interface).v1_2.GetEnv;
@@ -380,7 +380,7 @@ pub extern "C" fn loose_ends_confirm_draft(
         Some(date.as_deref()),
         party.as_deref(),
     ) {
-        Ok(Some(id)) => id as i64,
+        Ok(Some(id)) => id,
         _ => 0,
     }
 }
@@ -469,7 +469,7 @@ pub extern "C" fn loose_ends_create_commitment(
         confidence: Default::default(),
     };
     match handle.store.create_commitment(new) {
-        Ok(id) => id as i64,
+        Ok(id) => id,
         Err(_) => 0,
     }
 }

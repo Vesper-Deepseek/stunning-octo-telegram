@@ -61,40 +61,6 @@ fn re(pattern: &str) -> regex::Regex {
     regex::Regex::new(pattern).expect("valid pattern")
 }
 
-const ACTION_VERB_HINTS: &[&str] = &[
-    "owe",
-    "pay",
-    "repay",
-    "send",
-    "give",
-    "return",
-    "drop off",
-    "book",
-    "cancel",
-    "get",
-    "call",
-    "email",
-    "text",
-    "water",
-    "cover",
-    "reimburse",
-    "sign",
-    "finish",
-    "review",
-    "bring",
-    "fix",
-    "chase",
-    "remind",
-    "tell",
-    "promised",
-    "waiting",
-    "forgot",
-    "forget",
-    "refund",
-    "settle",
-    "square",
-];
-
 const CLAUSE_SPLIT: &str = r"[,;+.!?:]|\band also\b|\balso\b|\bplus\b";
 
 /// Extract candidate commitments from raw text using deterministic rules only.

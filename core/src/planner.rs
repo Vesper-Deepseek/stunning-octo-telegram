@@ -53,7 +53,7 @@ fn created_date(c: &Commitment) -> NaiveDate {
         .split('T')
         .next()
         .and_then(parse_iso)
-        .unwrap_or_else(|| today_fallback())
+        .unwrap_or_else(today_fallback)
 }
 
 fn updated_date(c: &Commitment) -> NaiveDate {
@@ -61,7 +61,7 @@ fn updated_date(c: &Commitment) -> NaiveDate {
         .split('T')
         .next()
         .and_then(parse_iso)
-        .unwrap_or_else(|| today_fallback())
+        .unwrap_or_else(today_fallback)
 }
 
 fn today_fallback() -> NaiveDate {

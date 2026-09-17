@@ -1,5 +1,5 @@
 cargo:rerun-if-env-changed=LIBSQLITE3_SYS_USE_PKG_CONFIG
-cargo:include=/home/muhammaduzair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libsqlite3-sys-0.35.0/sqlite3
+cargo:include=/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libsqlite3-sys-0.35.0/sqlite3
 cargo:rerun-if-changed=sqlite3/sqlite3.c
 cargo:rerun-if-changed=sqlite3/wasm32-wasi-vfs.c
 cargo:rerun-if-env-changed=SQLITE_MAX_VARIABLE_NUMBER
@@ -70,5 +70,5 @@ ARFLAGS_x86_64_unknown_linux_gnu = None
 cargo:rerun-if-env-changed=ARFLAGS_x86_64-unknown-linux-gnu
 ARFLAGS_x86_64-unknown-linux-gnu = None
 cargo:rustc-link-lib=static=sqlite3
-cargo:rustc-link-search=native=/home/muhammaduzair/agents/vesper/workspace/le/loose-ends/core/target/debug/build/libsqlite3-sys-8d12f794ca7f8669/out
-cargo:lib_dir=/home/muhammaduzair/agents/vesper/workspace/le/loose-ends/core/target/debug/build/libsqlite3-sys-8d12f794ca7f8669/out
+cargo:rustc-link-search=native=/home/runner/work/stunning-octo-telegram/stunning-octo-telegram/core/target/debug/build/libsqlite3-sys-8d12f794ca7f8669/out
+cargo:lib_dir=/home/runner/work/stunning-octo-telegram/stunning-octo-telegram/core/target/debug/build/libsqlite3-sys-8d12f794ca7f8669/out

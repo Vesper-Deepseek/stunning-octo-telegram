@@ -111,11 +111,10 @@ impl Store {
             "INSERT OR IGNORE INTO party(name) VALUES (?1)",
             params![name],
         )?;
-        Ok(self
-            .conn
+        self.conn
             .query_row("SELECT id FROM party WHERE name = ?1", params![name], |r| {
                 r.get(0)
-            })?)
+            })
     }
 
     // ---------------- entry sources ----------------
