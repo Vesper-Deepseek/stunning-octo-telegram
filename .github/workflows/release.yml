@@ -37,7 +37,7 @@ jobs:
 
       - name: Build release APK
         working-directory: app
-        run: flutter build apk --release --target-platform android-arm64
+        run: flutter build apk --release --target-platform android-arm64 --split-per-abi
 
       - name: Create GitHub release and upload APK
         env:
