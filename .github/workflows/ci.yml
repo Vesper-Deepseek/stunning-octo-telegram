@@ -23,8 +23,13 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
 
-      - name: Format Rust sources
-        run: cargo fmt --all
+      - name: Format core
+        working-directory: core
+        run: cargo fmt
+
+      - name: Format native bridge
+        working-directory: app/native
+        run: cargo fmt
 
       - name: Commit formatter changes
         shell: bash
@@ -38,8 +43,13 @@ jobs:
           git commit -m "ci: format and validate"
           git push origin HEAD:${GITHUB_REF_NAME}
 
-      - name: Verify Rust formatting
-        run: cargo fmt --all -- --check
+      - name: Verify core formatting
+        working-directory: core
+        run: cargo fmt -- --check
+
+      - name: Verify native bridge formatting
+        working-directory: app/native
+        run: cargo fmt -- --check
 
       - name: Test core
         working-directory: core
