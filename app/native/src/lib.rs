@@ -178,7 +178,7 @@ mod jni_bridge {
             commitment_id,
             note_c.as_ref().map(|s| s.as_ptr()).unwrap_or(ptr::null()),
         );
-        if result == 0 { 1 } else { 0 }
+        result == 0
     }
 
     unsafe extern "C" fn native_loose_ends_snooze_commitment(
