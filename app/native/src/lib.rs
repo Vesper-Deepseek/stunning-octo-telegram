@@ -11,8 +11,13 @@ use loose_ends_core::{
     store::{NewCommitment, Store},
 };
 
+#[cfg(feature = "neural")]
+use loose_ends_core::neural::{NeuralExtractor, ProvenancePath};
+
 pub struct StoreHandle {
     store: Store,
+    #[cfg(feature = "neural")]
+    extractor: NeuralExtractor,
 }
 
 // ===========================================================================
@@ -364,7 +369,14 @@ pub unsafe extern "C" fn loose_ends_open(path: *const c_char) -> *mut StoreHandl
         Err(_) => return ptr::null_mut(),
     };
     match Store::open(path_str) {
-        Ok(store) => Box::into_raw(Box::new(StoreHandle { store })),
+        Ok(store) => {
+            let handle = StoreHandle {
+                store,
+                #[cfg(feature = "neural")]
+                extractor: NeuralExtractor::default(),
+            };
+            Box::into_raw(Box::new(handle))
+        },
         Err(_) => ptr::null_mut(),
     }
 }
@@ -377,7 +389,14 @@ pub unsafe extern "C" fn loose_ends_open(path: *const c_char) -> *mut StoreHandl
 #[no_mangle]
 pub unsafe extern "C" fn loose_ends_open_in_memory() -> *mut StoreHandle {
     match Store::open_in_memory() {
-        Ok(store) => Box::into_raw(Box::new(StoreHandle { store })),
+        Ok(store) => {
+            let handle = StoreHandle {
+                store,
+                #[cfg(feature = "neural")]
+                extractor: NeuralExtractor::default(),
+            };
+            Box::into_raw(Box::new(handle))
+        },
         Err(_) => ptr::null_mut(),
     }
 }
@@ -656,6 +675,107 @@ pub unsafe extern "C" fn loose_ends_list_open(
                 Err(_) => ptr::null_mut(),
             }
         }
+        Err(_) => ptr::null_mut(),
+    }
+}
+
+/// Extracts text into persisted drafts, preferring the on-device neural model when a
+/// local GGUF model path is supplied and falling back to deterministic rules.
+///
+/// # Safety
+/// `handle` must be a valid, live `StoreHandle`. `text` and `model_path` must
+/// be null or valid NUL-terminated C strings for the duration of the call. The
+/// date components must form a valid calendar date.
+#[cfg(feature = "neural")]
+#[no_mangle]
+pub unsafe extern "C" fn loose_ends_extract_text(
+    handle: *mut StoreHandle,
+    text: *const c_char,
+    model_path: *const c_char,
+    today_year: i32,
+    today_month: u32,
+    today_day: u32,
+) -> *mut c_char {
+    let handle = unsafe { &*handle };
+    let text = match cstr_to_owned(text) {
+        Some(value) if !value.trim().is_empty() => value,
+        _ => return ptr::null_mut(),
+    };
+    let today = match NaiveDate::from_ymd_opt(today_year, today_month, today_day) {
+        Some(value) => value,
+        None => return ptr::null_mut(),
+    };
+    let model_path = cstr_to_owned(model_path).unwrap_or_default();
+    let (candidates, provenance_path) = if !model_path.trim().is_empty() && std::path::Path::new(&model_path).is_file() {
+        handle.extractor.extract_with_model_path(&text, today, &model_path)
+    } else {
+        (
+            loose_ends_core::rules::extract_rules(&text, today)
+                .into_iter()
+                .map(|r| loose_ends_core::neural::CrossChecked {
+                    description: r.description,
+                    party: r.party_guess,
+                    direction_symbolic: r.direction,
+                    expected_date: r.expected_date.map(|d| d.to_string()),
+                    confidence: r.confidence,
+                })
+                .collect(),
+            ProvenancePath::RuleFallbackFailure,
+        )
+    };
+
+    let src = match handle.store.add_entry_source(models::RawInputType::Text) {
+        Ok(id) => id,
+        Err(_) => return ptr::null_mut(),
+    };
+    let provenance = match provenance_path {
+        ProvenancePath::Model => Provenance::ModelExtracted,
+        ProvenancePath::RuleFallbackTimeout
+        | ProvenancePath::RuleFallbackFailure
+        | ProvenancePath::RuleFallbackBreakerOpen => Provenance::RuleExtracted,
+    };
+
+    let mut drafts = Vec::new();
+    for candidate in candidates {
+        let id = match handle.store.add_draft(
+            &candidate.description,
+            candidate.direction_symbolic,
+            candidate.expected_date.as_deref(),
+            candidate.party.as_deref(),
+            provenance,
+            &candidate.confidence,
+            Some(src),
+        ) {
+            Ok(id) => id,
+            Err(_) => return ptr::null_mut(),
+        };
+        drafts.push(serde_json::json!({
+            "id": id,
+            "description": candidate.description,
+            "direction": match candidate.direction_symbolic {
+                models::ExtractDirection::UserOwes => "user_owes",
+                models::ExtractDirection::OwedToUser => "owed_to_user",
+                models::ExtractDirection::Unclear => "unclear",
+            },
+            "expected_date": candidate.expected_date,
+            "party": candidate.party,
+            "party_confidence": match candidate.confidence.party {
+                Some(FieldConfidence::High) => "high",
+                _ => "low",
+            },
+            "date_confidence": match candidate.confidence.date {
+                Some(FieldConfidence::High) => "high",
+                _ => "low",
+            },
+            "overall_confidence": match candidate.confidence.overall {
+                Some(FieldConfidence::High) => "high",
+                _ => "low",
+            },
+            "source_provenance": provenance.as_str(),
+        }));
+    }
+    match CString::new(serde_json::to_string(&drafts).unwrap_or_default()) {
+        Ok(value) => value.into_raw(),
         Err(_) => ptr::null_mut(),
     }
 }
