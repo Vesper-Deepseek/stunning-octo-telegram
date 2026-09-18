@@ -19,7 +19,7 @@ jobs:
     name: Install, launch, and exercise Android APK
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout current main
+      - name: Checkout source commit under test
         uses: actions/checkout@v6
 
       - name: Enable KVM
