@@ -49,7 +49,7 @@ class _ModelManagerScreenState extends State<ModelManagerScreen> {
     final accepted = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Download ' + name + '?'),
+        title: Text('Download $name?'),
         content: const Text(
           'This downloads a large model over the internet. Wi-Fi is required by default. '
           'Mobile data can be enabled only by you. The model is downloaded from the fixed '
@@ -140,9 +140,9 @@ class _ModelManagerScreenState extends State<ModelManagerScreen> {
   String _bytes(Object? value) {
     final n = value is num ? value.toDouble() : 0;
     if (n >= 1024 * 1024 * 1024) {
-      return (n / 1024 / 1024 / 1024).toStringAsFixed(2) + ' GB';
+      return '${(n / 1024 / 1024 / 1024).toStringAsFixed(2)} GB';
     }
-    return (n / 1024 / 1024).toStringAsFixed(0) + ' MB';
+    return '${(n / 1024 / 1024).toStringAsFixed(0)} MB';
   }
 
   List<Map<String, dynamic>> get _statusModels {
@@ -202,16 +202,14 @@ class _ModelManagerScreenState extends State<ModelManagerScreen> {
                       Text(item['description']?.toString() ?? ''),
                       const SizedBox(height: 4),
                       Text(
-                        _bytes(item['sizeBytes']) + ' • SHA-256 verified before use',
+                        '${_bytes(item['sizeBytes'])} • SHA-256 verified before use',
                       ),
                       if (isActive) ...[
                         const SizedBox(height: 12),
                         LinearProgressIndicator(value: percent / 100),
                         const SizedBox(height: 4),
                         Text(
-                          percent.toStringAsFixed(1) + '% • ' +
-                          _bytes(progress?['downloadedBytes']) + ' / ' +
-                          _bytes(progress?['totalBytes']),
+                          '${percent.toStringAsFixed(1)}% • ${_bytes(progress?['downloadedBytes'])} / ${_bytes(progress?['totalBytes'])}',
                         ),
                       ],
                       const SizedBox(height: 8),
