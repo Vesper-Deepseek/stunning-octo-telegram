@@ -1,0 +1,77 @@
+name: Android Emulator Smoke Test
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  emulator:
+    name: Install and launch universal APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Download universal APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts
+          gh release download v1.0.2             --repo "${{ github.repository }}"             --pattern "app-release.apk"             --dir artifacts
+          test -s artifacts/app-release.apk
+          sha256sum artifacts/app-release.apk
+
+      - name: Run Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_2
+          cores: 2
+          ram-size: 4096M
+          disk-size: 8G
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            set -euxo pipefail
+            adb wait-for-device
+            adb shell settings put global window_animation_scale 0
+            adb shell settings put global transition_animation_scale 0
+            adb shell settings put global animator_duration_scale 0
+            adb install -r artifacts/app-release.apk
+            adb shell am force-stop com.looseends.loose_ends
+            adb logcat -c
+            adb shell monkey -p com.looseends.loose_ends 1
+            sleep 12
+            adb shell pidof com.looseends.loose_ends
+            adb shell dumpsys window windows | grep -E 'mCurrentFocus|mFocusedApp' || true
+            adb exec-out screencap -p > artifacts/startup.png
+            adb shell uiautomator dump /sdcard/window.xml
+            adb pull /sdcard/window.xml artifacts/window.xml
+            adb logcat -d -v threadtime > artifacts/logcat.txt
+            adb shell dumpsys activity activities > artifacts/activities.txt
+            if grep -Eq 'FATAL EXCEPTION|Process: com\.looseends\.loose_ends' artifacts/logcat.txt; then
+              echo "Application crash signature found in logcat"
+              exit 1
+            fi
+
+      - name: Upload emulator diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-emulator-diagnostics
+          path: artifacts
+          if-no-files-found: warn
+          retention-days: 14
