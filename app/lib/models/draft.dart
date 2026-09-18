@@ -8,6 +8,8 @@ class Draft {
   final String partyConfidence; // 'high' | 'low'
   final String dateConfidence;
   final String overallConfidence;
+  final String sourceProvenance; // 'model_extracted' | 'rule_extracted' | 'manual'
+  final String? createdAt;
 
   const Draft({
     this.id = 0,
@@ -18,5 +20,7 @@ class Draft {
     required this.partyConfidence,
     required this.dateConfidence,
     required this.overallConfidence,
+    this.sourceProvenance = 'rule_extracted',
+    this.createdAt,
   });
 }
