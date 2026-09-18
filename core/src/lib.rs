@@ -6,7 +6,11 @@
 //! deterministic planner — and finally through explicit user confirmation.
 
 pub mod dates;
+#[cfg(feature = "ocr")]
+pub mod ocr;
 pub mod models;
+#[cfg(feature = "voice")]
+pub mod voice;
 #[cfg(feature = "neural")]
 pub mod neural;
 pub mod party;
