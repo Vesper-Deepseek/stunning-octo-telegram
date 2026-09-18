@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'capture_screen.dart';
+import 'manual_entry_screen.dart';
 import 'review_screen.dart';
 import 'owe_you_screen.dart';
 import 'owed_to_you_screen.dart';
@@ -48,6 +49,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const CaptureScreen()),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.edit_note, size: 36),
+              title: const Text('Manual entry'),
+              subtitle: const Text('Add a commitment directly'),
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ManualEntryScreen()),
                 );
               },
             ),
