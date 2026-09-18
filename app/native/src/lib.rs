@@ -188,7 +188,7 @@ mod jni_bridge {
         commitment_id: jlong,
     ) -> jboolean {
         let result = super::loose_ends_snooze_commitment(store_ptr as *mut _, commitment_id);
-        if result == 0 { 1 } else { 0 }
+        result == 0
     }
 
     unsafe extern "C" fn native_loose_ends_list_open(
