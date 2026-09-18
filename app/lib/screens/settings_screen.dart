@@ -39,7 +39,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: Text(
                 selected == null
                     ? 'No model selected — rules-only mode is active'
-                    : 'Selected: ${selected}',
+                    : 'Selected: $selected',
               ),
               trailing: const Icon(Icons.chevron_right),
               onTap: () async {
