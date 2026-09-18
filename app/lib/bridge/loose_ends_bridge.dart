@@ -144,6 +144,72 @@ class LooseEndsBridge {
     }
   }
 
+  static Future<String?> pickModel() async {
+    if (!_initialized || Platform.isLinux && !_channelAvailable) return null;
+    try {
+      return await _channel.invokeMethod<String>('pickModel');
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>> modelStatus() async {
+    if (!_initialized || Platform.isLinux && !_channelAvailable) {
+      return const {'configured': false};
+    }
+    try {
+      final result = await _channel.invokeMethod('modelStatus');
+      return result is Map
+          ? result.map((key, value) => MapEntry(key.toString(), value))
+          : const {'configured': false};
+    } on PlatformException {
+      return const {'configured': false};
+    } on MissingPluginException {
+      return const {'configured': false};
+    }
+  }
+
+  static Future<bool> scheduleReminderForDate({
+    required int id,
+    required String description,
+    String? expectedDate,
+  }) async {
+    if (!_initialized || Platform.isLinux && !_channelAvailable || expectedDate == null) {
+      return false;
+    }
+    final due = DateTime.tryParse(expectedDate);
+    if (due == null) return false;
+    var trigger = DateTime(due.year, due.month, due.day, 9);
+    if (!trigger.isAfter(DateTime.now())) {
+      return false;
+    }
+    try {
+      return await _channel.invokeMethod<bool>('scheduleReminder', {
+        'id': id,
+        'title': 'Loose Ends reminder',
+        'text': description,
+        'triggerAtMillis': trigger.millisecondsSinceEpoch,
+      }) ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  static Future<bool> cancelReminder(int id) async {
+    if (!_initialized || Platform.isLinux && !_channelAvailable) return false;
+    try {
+      return await _channel.invokeMethod<bool>('cancelReminder', {'id': id}) ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
   static Future<int?> createCommitment({
     required String description,
     required Direction direction,
