@@ -1,0 +1,4 @@
+rust_input: crate::api
+rust_root: native/
+dart_output: lib/src/rust
+local: true
