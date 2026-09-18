@@ -10,8 +10,6 @@ import 'package:loose_ends/models/commitment.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  // ---------------- Home / widget smoke ----------------
-
   testWidgets('App launches and shows home screen', (WidgetTester tester) async {
     await tester.pumpWidget(const LooseEndsApp());
     await tester.pump();
@@ -22,8 +20,6 @@ void main() {
     expect(find.text('You Owe'), findsOneWidget);
     expect(find.text('Owed to You'), findsOneWidget);
   });
-
-  // ---------------- Direction model ----------------
 
   group('Direction', () {
     test('displayName matches each enum value', () {
@@ -46,29 +42,20 @@ void main() {
     });
 
     test('direction wire string is the snake_case stored value, not enum identifier', () {
-      // This pins the wire format that crosses to Rust (snake_case must match
-      // the schema CHECK constraint on the direction column).
       expect(Direction.userOwes.name, 'user_owes');
       expect(Direction.owedToUser.name, 'owed_to_user');
       expect(Direction.unclear.name, 'unclear');
     });
   });
 
-  // ---------------- Bridge fallback (no native channel registered) ----------------
-
   group('LooseEndsBridge without native channel', () {
-    // _initialized is static, so order matters. The default channel handler
-    // in widget tests throws MissingPluginException, which the bridge catches
-    // and leaves _initialized=false -> all methods take the fallback path.
-
     setUp(() {
-      // Ensure no leftover mock handler from a previous test
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(const MethodChannel('com.looseends/core'), null);
     });
 
     test('init() does not throw when no native side is registered', () async {
-      await LooseEndsBridge.init(); // must not throw
+      await LooseEndsBridge.init();
     });
 
     test('ingestText returns a single fallback draft for arbitrary text',
@@ -83,7 +70,7 @@ void main() {
 
     test('ingestText truncates fallback description to 80 chars + ellipsis',
         () async {
-      final long = 'word ' * 100; // ~500 chars
+      final long = 'word ' * 100;
       final drafts = await LooseEndsBridge.ingestText(long);
       expect(drafts.first.description.length, lessThanOrEqualTo(83));
       expect(drafts.first.description, endsWith('...'));
@@ -109,8 +96,6 @@ void main() {
     });
 
     test('confirmDraft honors description/direction/date overrides', () async {
-      // No native channel -> returns null regardless of args; this pins that
-      // the override-path code at least parses the inputs without throwing.
       final d = Draft(
         description: 'orig',
         direction: 'user_owes',
@@ -137,8 +122,6 @@ void main() {
     });
   });
 
-  // ---------------- Bridge with mocked native channel ----------------
-
   group('LooseEndsBridge with mocked native channel', () {
     const channel = MethodChannel('com.looseends/core');
 
@@ -150,10 +133,11 @@ void main() {
     test('ingestText parses the JSON-shaped response from native', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (call) async {
-        if (call.method == 'init') return null;
+        if (call.method == 'init') return true;
         if (call.method == 'ingestText') {
           return [
             {
+              'id': 7,
               'description': 'pay Lena 20',
               'direction': 'user_owes',
               'expected_date': '2026-09-01',
@@ -170,6 +154,7 @@ void main() {
       await LooseEndsBridge.init();
       final drafts = await LooseEndsBridge.ingestText('whatever');
       expect(drafts, hasLength(1));
+      expect(drafts.first.id, 7);
       expect(drafts.first.description, 'pay Lena 20');
       expect(drafts.first.direction, 'user_owes');
       expect(drafts.first.expectedDate, '2026-09-01');
@@ -179,10 +164,8 @@ void main() {
     test('listOpen maps direction strings via Direction.fromString', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (call) async {
-        if (call.method == 'init') return null;
+        if (call.method == 'init') return true;
         if (call.method == 'listOpen') {
-          // First call asks for user_owes; return two, one owed_to_user
-          // to verify the fromString mapping, not just filter passthrough.
           return [
             {
               'id': 1,
@@ -230,7 +213,7 @@ void main() {
     test('confirmDraft returns the integer id from native', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (call) async {
-        if (call.method == 'init') return null;
+        if (call.method == 'init') return true;
         if (call.method == 'confirmDraft') return 42;
         return null;
       });
@@ -250,18 +233,15 @@ void main() {
     test('PlatformException from native falls back gracefully', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (call) async {
-        if (call.method == 'init') return null;
+        if (call.method == 'init') return true;
         throw PlatformException(code: 'NATIVE_CRASH', message: 'boom');
       });
       await LooseEndsBridge.init();
       final drafts = await LooseEndsBridge.ingestText('whatever');
-      // Falls back to the same unclear-draft as the no-native path
       expect(drafts, hasLength(1));
       expect(drafts.first.overallConfidence, 'low');
     });
   });
-
-  // ---------------- Model construction ----------------
 
   group('Commitment model', () {
     test('Commitment and CommitmentView are independent value types', () {
@@ -282,7 +262,6 @@ void main() {
       expect(c.party, isNull);
       expect(c.expectedDate, isNull);
       expect(v.expectedDate, isNull);
-      // View carries agingAction that Commitment does not
       expect(v.agingAction, 'surface');
     });
   });
