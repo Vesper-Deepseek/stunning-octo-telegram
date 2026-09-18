@@ -123,6 +123,63 @@ mod jni_bridge {
         result
     }
 
+    unsafe extern "C" fn native_loose_ends_create_commitment(
+        env: JNIEnv,
+        _class: jclass,
+        store_ptr: jlong,
+        description: jstring,
+        direction: jstring,
+        expected_date: jstring,
+        party: jstring,
+    ) -> jlong {
+        let desc = jstring_to_optional_string(env, description).unwrap_or_default();
+        let dir = jstring_to_optional_string(env, direction).unwrap_or_default();
+        let date = jstring_to_optional_string(env, expected_date).unwrap_or_default();
+        let party = jstring_to_optional_string(env, party);
+        let desc_c = CString::new(desc).unwrap_or_default();
+        let dir_c = CString::new(dir).unwrap_or_default();
+        let date_c = CString::new(date).unwrap_or_default();
+        let party_c = party.map(|v| CString::new(v).unwrap_or_default());
+
+        super::loose_ends_create_commitment(
+            store_ptr as *mut _,
+            desc_c.as_ptr(),
+            dir_c.as_ptr(),
+            date_c.as_ptr(),
+            party_c
+                .as_ref()
+                .map(|s| s.as_ptr())
+                .unwrap_or(ptr::null()),
+        ) as jlong
+    }
+
+    unsafe extern "C" fn native_loose_ends_resolve_commitment(
+        env: JNIEnv,
+        _class: jclass,
+        store_ptr: jlong,
+        commitment_id: jlong,
+        note: jstring,
+    ) -> jboolean {
+        let note = jstring_to_optional_string(env, note);
+        let note_c = note.map(|v| CString::new(v).unwrap_or_default());
+        let result = super::loose_ends_resolve_commitment(
+            store_ptr as *mut _,
+            commitment_id,
+            note_c.as_ref().map(|s| s.as_ptr()).unwrap_or(ptr::null()),
+        );
+        if result == 0 { 1 } else { 0 }
+    }
+
+    unsafe extern "C" fn native_loose_ends_snooze_commitment(
+        _env: JNIEnv,
+        _class: jclass,
+        store_ptr: jlong,
+        commitment_id: jlong,
+    ) -> jboolean {
+        let result = super::loose_ends_snooze_commitment(store_ptr as *mut _, commitment_id);
+        if result == 0 { 1 } else { 0 }
+    }
+
     unsafe extern "C" fn native_loose_ends_list_open(
         env: JNIEnv,
         _class: jclass,
@@ -204,6 +261,28 @@ mod jni_bridge {
                     .as_ptr()
                     .cast_mut(),
                 fnPtr: native_loose_ends_list_open as *mut c_void,
+            },
+            JNINativeMethod {
+                name: c"looseEndsListDrafts".as_ptr().cast_mut(),
+                signature: c"(J)Ljava/lang/String;".as_ptr().cast_mut(),
+                fnPtr: native_loose_ends_list_drafts as *mut c_void,
+            },
+            JNINativeMethod {
+                name: c"looseEndsCreateCommitment".as_ptr().cast_mut(),
+                signature: c"(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)J"
+                    .as_ptr()
+                    .cast_mut(),
+                fnPtr: native_loose_ends_create_commitment as *mut c_void,
+            },
+            JNINativeMethod {
+                name: c"looseEndsResolveCommitment".as_ptr().cast_mut(),
+                signature: c"(JJLjava/lang/String;)Z".as_ptr().cast_mut(),
+                fnPtr: native_loose_ends_resolve_commitment as *mut c_void,
+            },
+            JNINativeMethod {
+                name: c"looseEndsSnoozeCommitment".as_ptr().cast_mut(),
+                signature: c"(JJ)Z".as_ptr().cast_mut(),
+                fnPtr: native_loose_ends_snooze_commitment as *mut c_void,
             },
         ];
 
@@ -474,6 +553,40 @@ pub unsafe extern "C" fn loose_ends_confirm_draft(
     ) {
         Ok(Some(id)) => id,
         _ => 0,
+    }
+}
+
+/// Resolves a commitment and records an optional resolution note.
+///
+/// # Safety
+/// `handle` must be a valid, live `StoreHandle`. `note` may be null.
+#[no_mangle]
+pub unsafe extern "C" fn loose_ends_resolve_commitment(
+    handle: *mut StoreHandle,
+    commitment_id: i64,
+    note: *const c_char,
+) -> i32 {
+    let handle = unsafe { &*handle };
+    let note = cstr_to_owned(note);
+    match handle.store.resolve_commitment(commitment_id, note.as_deref()) {
+        Ok(()) => 0,
+        Err(_) => -1,
+    }
+}
+
+/// Snoozes a commitment so the planner will not surface it as open.
+///
+/// # Safety
+/// `handle` must be a valid, live `StoreHandle`.
+#[no_mangle]
+pub unsafe extern "C" fn loose_ends_snooze_commitment(
+    handle: *mut StoreHandle,
+    commitment_id: i64,
+) -> i32 {
+    let handle = unsafe { &*handle };
+    match handle.store.snooze_commitment(commitment_id) {
+        Ok(()) => 0,
+        Err(_) => -1,
     }
 }
 
