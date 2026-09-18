@@ -163,12 +163,7 @@ mod jni_bridge {
             return -1;
         }
         let get_env = (*vm_interface).v1_2.GetEnv;
-        if get_env(
-            vm,
-            &mut env_ptr as *mut *mut c_void,
-            JNI_VERSION_1_6,
-        ) != JNI_OK
-        {
+        if get_env(vm, &mut env_ptr as *mut *mut c_void, JNI_VERSION_1_6) != JNI_OK {
             return -1;
         }
         let env: JNIEnv = env_ptr as JNIEnv;
