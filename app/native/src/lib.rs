@@ -373,11 +373,63 @@ pub unsafe extern "C" fn loose_ends_ingest_rules(
                     Some(FieldConfidence::High) => "high",
                     _ => "low",
                 },
+                "source_provenance": d.source_provenance.as_str(),
             })
         }).collect::<Vec<_>>()
     });
 
     match CString::new(json.to_string()) {
+        Ok(s) => s.into_raw(),
+        Err(_) => ptr::null_mut(),
+    }
+}
+
+/// Lists all pending drafts, including provenance and confidence metadata.
+///
+/// # Safety
+/// `handle` must be a valid, live `StoreHandle` pointer returned by this library.
+#[no_mangle]
+pub unsafe extern "C" fn loose_ends_list_drafts(handle: *mut StoreHandle) -> *mut c_char {
+    let handle = unsafe { &*handle };
+    let drafts = match handle.store.list_drafts() {
+        Ok(drafts) => drafts,
+        Err(_) => return ptr::null_mut(),
+    };
+    let json = drafts
+        .into_iter()
+        .map(|d| {
+            let confidence: models::Confidence = serde_json::from_str(&d.confidence_json)
+                .unwrap_or_default();
+            serde_json::json!({
+                "id": d.id,
+                "description": d.description,
+                "direction": match d.direction {
+                    models::ExtractDirection::UserOwes => "user_owes",
+                    models::ExtractDirection::OwedToUser => "owed_to_user",
+                    models::ExtractDirection::Unclear => "unclear",
+                },
+                "expected_date": d.expected_date,
+                "party": d.party_guess,
+                "party_confidence": match confidence.party {
+                    Some(FieldConfidence::High) => "high",
+                    _ => "low",
+                },
+                "date_confidence": match confidence.date {
+                    Some(FieldConfidence::High) => "high",
+                    _ => "low",
+                },
+                "overall_confidence": match confidence.overall {
+                    Some(FieldConfidence::High) => "high",
+                    _ => "low",
+                },
+                "source_provenance": d.source_provenance.as_str(),
+                "created_at": d.created_at,
+                "entry_source_id": d.entry_source_id,
+            })
+        })
+        .collect::<Vec<_>>();
+
+    match CString::new(serde_json::to_string(&json).unwrap_or_default()) {
         Ok(s) => s.into_raw(),
         Err(_) => ptr::null_mut(),
     }
