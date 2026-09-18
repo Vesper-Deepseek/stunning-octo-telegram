@@ -1,8 +1,9 @@
 name: Android Emulator Smoke Test
 
 on:
-  push:
-    branches: [main]
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -10,11 +11,20 @@ permissions:
 
 jobs:
   emulator:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == github.event.repository.default_branch &&
+        github.event.workflow_run.head_repository.full_name == github.repository
+      )
     name: Install and launch universal APK
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout tested release commit
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Enable KVM
         run: |
@@ -27,7 +37,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p artifacts
-          gh release download v1.0.2             --repo "${{ github.repository }}"             --pattern "app-release.apk"             --dir artifacts
+          VERSION=$(sed -n 's/^version: \([0-9][^+[:space:]]*\).*/\1/p' app/pubspec.yaml)
+          TAG="v${VERSION}"
+          gh release download "$TAG"             --repo "${{ github.repository }}"             --pattern "app-release.apk"             --dir artifacts
           test -s artifacts/app-release.apk
           sha256sum artifacts/app-release.apk
 
