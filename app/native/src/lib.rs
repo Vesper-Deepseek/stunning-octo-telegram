@@ -151,6 +151,11 @@ mod jni_bridge {
         string_to_jstring(env, &result.unwrap_or_default())
     }
 
+    /// Registers the native bridge methods with the Android JVM and returns the JNI version.
+    ///
+    /// # Safety
+    /// The JVM must pass a valid `JavaVM` pointer and reserved argument according to the JNI
+    /// invocation contract. This function is called by the JVM during native library loading.
     #[no_mangle]
     pub unsafe extern "C" fn JNI_OnLoad(vm: JavaVM, _reserved: *mut c_void) -> jint {
         let mut env_ptr: *mut c_void = ptr::null_mut();
