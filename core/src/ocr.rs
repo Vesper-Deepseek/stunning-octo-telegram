@@ -17,8 +17,8 @@ where
     P: AsRef<Path>,
     D: AsRef<Path>,
 {
-    let detection = Model::load_file(detection_model_path)
-        .map_err(|e| format!("OCR detection model: {e}"))?;
+    let detection =
+        Model::load_file(detection_model_path).map_err(|e| format!("OCR detection model: {e}"))?;
     let recognition = Model::load_file(recognition_model_path)
         .map_err(|e| format!("OCR recognition model: {e}"))?;
 

@@ -60,7 +60,9 @@ impl CoreApi {
     pub async fn list_drafts(&self) -> Result<String, String> {
         let store = Arc::clone(&self.store);
         tokio::task::spawn_blocking(move || {
-            let store = store.lock().map_err(|_| "store lock poisoned".to_string())?;
+            let store = store
+                .lock()
+                .map_err(|_| "store lock poisoned".to_string())?;
             let drafts = store.list_drafts().map_err(|e| e.to_string())?;
             serde_json::to_string(&drafts).map_err(|e| e.to_string())
         })
@@ -78,11 +80,10 @@ impl CoreApi {
     ) -> Result<Option<i64>, String> {
         let store = Arc::clone(&self.store);
         tokio::task::spawn_blocking(move || {
-            let direction = direction
-                .as_deref()
-                .map(parse_direction)
-                .transpose()?;
-            let store = store.lock().map_err(|_| "store lock poisoned".to_string())?;
+            let direction = direction.as_deref().map(parse_direction).transpose()?;
+            let store = store
+                .lock()
+                .map_err(|_| "store lock poisoned".to_string())?;
             store
                 .confirm_draft(
                     id,
@@ -97,16 +98,14 @@ impl CoreApi {
         .map_err(|e| e.to_string())?
     }
 
-    pub async fn list_open(
-        &self,
-        direction: String,
-        today: String,
-    ) -> Result<String, String> {
+    pub async fn list_open(&self, direction: String, today: String) -> Result<String, String> {
         let direction = parse_direction(&direction)?;
         let today = parse_date(&today)?;
         let store = Arc::clone(&self.store);
         tokio::task::spawn_blocking(move || {
-            let store = store.lock().map_err(|_| "store lock poisoned".to_string())?;
+            let store = store
+                .lock()
+                .map_err(|_| "store lock poisoned".to_string())?;
             let values = store
                 .view(direction, today, &PlannerConfig::default())
                 .map_err(|e| e.to_string())?;
@@ -143,7 +142,9 @@ impl CoreApi {
         let direction = parse_direction(&direction)?;
         let store = Arc::clone(&self.store);
         tokio::task::spawn_blocking(move || {
-            let store = store.lock().map_err(|_| "store lock poisoned".to_string())?;
+            let store = store
+                .lock()
+                .map_err(|_| "store lock poisoned".to_string())?;
             let new = match direction {
                 Direction::UserOwes => NewCommitment {
                     description: &description,
@@ -170,14 +171,12 @@ impl CoreApi {
         .map_err(|e| e.to_string())?
     }
 
-    pub async fn resolve_commitment(
-        &self,
-        id: i64,
-        note: Option<String>,
-    ) -> Result<bool, String> {
+    pub async fn resolve_commitment(&self, id: i64, note: Option<String>) -> Result<bool, String> {
         let store = Arc::clone(&self.store);
         tokio::task::spawn_blocking(move || {
-            let store = store.lock().map_err(|_| "store lock poisoned".to_string())?;
+            let store = store
+                .lock()
+                .map_err(|_| "store lock poisoned".to_string())?;
             store
                 .resolve_commitment(id, note.as_deref())
                 .map(|_| true)
@@ -190,7 +189,9 @@ impl CoreApi {
     pub async fn snooze_commitment(&self, id: i64) -> Result<bool, String> {
         let store = Arc::clone(&self.store);
         tokio::task::spawn_blocking(move || {
-            let store = store.lock().map_err(|_| "store lock poisoned".to_string())?;
+            let store = store
+                .lock()
+                .map_err(|_| "store lock poisoned".to_string())?;
             store
                 .snooze_commitment(id)
                 .map(|_| true)
@@ -218,8 +219,12 @@ fn ingest_rules_only(
     text: &str,
     today: NaiveDate,
 ) -> Result<String, String> {
-    let store = store.lock().map_err(|_| "store lock poisoned".to_string())?;
-    let report = store.ingest_text_rules(text, today).map_err(|e| e.to_string())?;
+    let store = store
+        .lock()
+        .map_err(|_| "store lock poisoned".to_string())?;
+    let report = store
+        .ingest_text_rules(text, today)
+        .map_err(|e| e.to_string())?;
     let drafts = store.list_drafts().map_err(|e| e.to_string())?;
     let selected = drafts
         .into_iter()
@@ -243,7 +248,9 @@ fn ingest_with_neural(
         | ProvenancePath::RuleFallbackFailure
         | ProvenancePath::RuleFallbackBreakerOpen => Provenance::RuleExtracted,
     };
-    let store = store.lock().map_err(|_| "store lock poisoned".to_string())?;
+    let store = store
+        .lock()
+        .map_err(|_| "store lock poisoned".to_string())?;
     let source_id = store
         .add_entry_source(RawInputType::Text)
         .map_err(|e| e.to_string())?;

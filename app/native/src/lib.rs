@@ -196,10 +196,7 @@ mod jni_bridge {
             desc_c.as_ptr(),
             dir_c.as_ptr(),
             date_c.as_ptr(),
-            party_c
-                .as_ref()
-                .map(|s| s.as_ptr())
-                .unwrap_or(ptr::null()),
+            party_c.as_ref().map(|s| s.as_ptr()).unwrap_or(ptr::null()),
         ) as jlong
     }
 
@@ -327,9 +324,10 @@ mod jni_bridge {
             },
             JNINativeMethod {
                 name: c"looseEndsCreateCommitment".as_ptr().cast_mut(),
-                signature: c"(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)J"
-                    .as_ptr()
-                    .cast_mut(),
+                signature:
+                    c"(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)J"
+                        .as_ptr()
+                        .cast_mut(),
                 fnPtr: native_loose_ends_create_commitment as *mut c_void,
             },
             JNINativeMethod {
@@ -418,7 +416,7 @@ pub unsafe extern "C" fn loose_ends_open(path: *const c_char) -> *mut StoreHandl
                 extractor: NeuralExtractor::default(),
             };
             Box::into_raw(Box::new(handle))
-        },
+        }
         Err(_) => ptr::null_mut(),
     }
 }
@@ -438,7 +436,7 @@ pub unsafe extern "C" fn loose_ends_open_in_memory() -> *mut StoreHandle {
                 extractor: NeuralExtractor::default(),
             };
             Box::into_raw(Box::new(handle))
-        },
+        }
         Err(_) => ptr::null_mut(),
     }
 }
@@ -640,7 +638,10 @@ pub unsafe extern "C" fn loose_ends_resolve_commitment(
 ) -> i32 {
     let handle = unsafe { &*handle };
     let note = cstr_to_owned(note);
-    match handle.store.resolve_commitment(commitment_id, note.as_deref()) {
+    match handle
+        .store
+        .resolve_commitment(commitment_id, note.as_deref())
+    {
         Ok(()) => 0,
         Err(_) => -1,
     }
@@ -751,23 +752,26 @@ pub unsafe extern "C" fn loose_ends_extract_text(
         None => return ptr::null_mut(),
     };
     let model_path = cstr_to_owned(model_path).unwrap_or_default();
-    let (candidates, provenance_path) = if !model_path.trim().is_empty() && std::path::Path::new(&model_path).is_file() {
-        handle.extractor.extract_with_model_path(&text, today, &model_path)
-    } else {
-        (
-            loose_ends_core::rules::extract_rules(&text, today)
-                .into_iter()
-                .map(|r| loose_ends_core::neural::CrossChecked {
-                    description: r.description,
-                    party: r.party_guess,
-                    direction_symbolic: r.direction,
-                    expected_date: r.expected_date.map(|d| d.to_string()),
-                    confidence: r.confidence,
-                })
-                .collect(),
-            ProvenancePath::RuleFallbackFailure,
-        )
-    };
+    let (candidates, provenance_path) =
+        if !model_path.trim().is_empty() && std::path::Path::new(&model_path).is_file() {
+            handle
+                .extractor
+                .extract_with_model_path(&text, today, &model_path)
+        } else {
+            (
+                loose_ends_core::rules::extract_rules(&text, today)
+                    .into_iter()
+                    .map(|r| loose_ends_core::neural::CrossChecked {
+                        description: r.description,
+                        party: r.party_guess,
+                        direction_symbolic: r.direction,
+                        expected_date: r.expected_date.map(|d| d.to_string()),
+                        confidence: r.confidence,
+                    })
+                    .collect(),
+                ProvenancePath::RuleFallbackFailure,
+            )
+        };
 
     let src = match handle.store.add_entry_source(models::RawInputType::Text) {
         Ok(id) => id,

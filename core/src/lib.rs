@@ -6,17 +6,17 @@
 //! deterministic planner — and finally through explicit user confirmation.
 
 pub mod dates;
-#[cfg(feature = "ocr")]
-pub mod ocr;
 pub mod models;
-#[cfg(feature = "voice")]
-pub mod voice;
 #[cfg(feature = "neural")]
 pub mod neural;
+#[cfg(feature = "ocr")]
+pub mod ocr;
 pub mod party;
 pub mod planner;
 pub mod rules;
 pub mod store;
+#[cfg(feature = "voice")]
+pub mod voice;
 
 use chrono::NaiveDate;
 

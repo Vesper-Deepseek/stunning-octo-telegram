@@ -54,8 +54,7 @@ pub fn transcribe_wav<P: AsRef<Path>, M: AsRef<Path>>(
 }
 
 fn read_wav_16k_mono<P: AsRef<Path>>(path: P) -> Result<Vec<f32>, String> {
-    let mut reader =
-        hound::WavReader::open(path).map_err(|e| format!("WAV open: {e}"))?;
+    let mut reader = hound::WavReader::open(path).map_err(|e| format!("WAV open: {e}"))?;
     let spec = reader.spec();
     if spec.channels == 0 {
         return Err("WAV contains zero channels".into());
@@ -64,8 +63,8 @@ fn read_wav_16k_mono<P: AsRef<Path>>(path: P) -> Result<Vec<f32>, String> {
     let mut mono = Vec::new();
     match spec.sample_format {
         hound::SampleFormat::Int => {
-            let max = ((1_i64 << (spec.bits_per_sample.saturating_sub(1).min(31))) - 1)
-                .max(1) as f32;
+            let max =
+                ((1_i64 << (spec.bits_per_sample.saturating_sub(1).min(31))) - 1).max(1) as f32;
             let mut frame = Vec::with_capacity(spec.channels as usize);
             for sample in reader.samples::<i32>() {
                 let value = sample.map_err(|e| format!("WAV sample: {e}"))? as f32 / max;
@@ -79,7 +78,11 @@ fn read_wav_16k_mono<P: AsRef<Path>>(path: P) -> Result<Vec<f32>, String> {
         hound::SampleFormat::Float => {
             let mut frame = Vec::with_capacity(spec.channels as usize);
             for sample in reader.samples::<f32>() {
-                frame.push(sample.map_err(|e| format!("WAV sample: {e}"))?.clamp(-1.0, 1.0));
+                frame.push(
+                    sample
+                        .map_err(|e| format!("WAV sample: {e}"))?
+                        .clamp(-1.0, 1.0),
+                );
                 if frame.len() == spec.channels as usize {
                     mono.push(frame.iter().copied().sum::<f32>() / frame.len() as f32);
                     frame.clear();

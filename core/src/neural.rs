@@ -219,10 +219,7 @@ fn run_inference(model_path: &str, prompt: &str, max_tokens: u32) -> Result<Stri
 
     let grammar = LlamaSampler::grammar(&model, EXTRACTION_GRAMMAR, "root")
         .map_err(|e| format!("grammar init: {e:?}"))?;
-    let mut sampler = LlamaSampler::chain_simple([
-        grammar,
-        LlamaSampler::dist(1234),
-    ]);
+    let mut sampler = LlamaSampler::chain_simple([grammar, LlamaSampler::dist(1234)]);
 
     let mut batch = LlamaBatch::new(std::cmp::max(512, tokens.len()), 1);
     let last_index = (tokens.len() - 1) as i32;
