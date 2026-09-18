@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../bridge/loose_ends_bridge.dart';
 import 'model_manager_screen.dart';
+import 'home_screen.dart';
 
 class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
@@ -8,7 +9,9 @@ class OnboardingScreen extends StatelessWidget {
   Future<void> _finish(BuildContext context) async {
     await LooseEndsBridge.markOnboardingComplete();
     if (!context.mounted) return;
-    Navigator.of(context).pushReplacementNamed('/');
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+    );
   }
 
   @override
