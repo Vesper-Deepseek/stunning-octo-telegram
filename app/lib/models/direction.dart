@@ -7,18 +7,10 @@ enum Direction {
   const Direction(this.name);
 
   static Direction fromString(String s) {
-    switch (s) {
-      case 'user_owes':
-      case 'userowes':
-        return Direction.userOwes;
-      case 'owed_to_user':
-      case 'owedtouser':
-        return Direction.owedToUser;
-      case 'unclear':
-        return Direction.unclear;
-      default:
-        return Direction.unclear;
-    }
+    return Direction.values.firstWhere(
+      (d) => d.name == s,
+      orElse: () => Direction.unclear,
+    );
   }
 
   String get displayName {
