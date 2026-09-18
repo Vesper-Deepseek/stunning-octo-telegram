@@ -20,6 +20,8 @@ neural = ["loose-ends-core/neural"]
 frb = ["flutter_rust_bridge"]
 frb-neural = ["frb", "loose-ends-core/neural"]
 voice = ["loose-ends-core/voice"]
+ocr = ["loose-ends-core/ocr"]
+multimodal = ["voice", "ocr"]
 
 [profile.release]
 opt-level = "z"
