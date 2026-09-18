@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'bridge/loose_ends_bridge.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LooseEndsBridge.init();
-  runApp(const LooseEndsApp());
+  final showOnboarding = await LooseEndsBridge.shouldShowOnboarding();
+  runApp(LooseEndsApp(showOnboarding: showOnboarding));
 }
 
 class LooseEndsApp extends StatelessWidget {
-  const LooseEndsApp({super.key});
+  final bool showOnboarding;
+
+  const LooseEndsApp({
+    super.key,
+    required this.showOnboarding,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +26,10 @@ class LooseEndsApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: showOnboarding ? const OnboardingScreen() : const HomeScreen(),
+      routes: {
+        '/': (_) => const HomeScreen(),
+      },
     );
   }
 }
