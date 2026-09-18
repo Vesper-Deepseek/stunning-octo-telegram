@@ -1,8 +1,6 @@
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:convert';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 class LooseEndsBridgeLinux {
   static DynamicLibrary? _lib;
@@ -59,8 +57,12 @@ class LooseEndsBridgeLinux {
     _malloc = procLib.lookupFunction<Pointer<Void> Function(Int64), Pointer<Void> Function(int)>('malloc');
     _free = procLib.lookupFunction<Void Function(Pointer<Void>), void Function(Pointer<Void>)>('free');
 
-    final appDir = await getApplicationSupportDirectory();
-    final dbPath = p.join(appDir.path, 'loose_ends.db');
+    final home = Platform.environment['HOME'];
+    final dataRoot = Platform.environment['XDG_DATA_HOME'] ??
+        (home == null ? Directory.current.path : r'$home/.local/share');
+    final appDir = Directory('${dataRoot}${Platform.pathSeparator}loose_ends');
+    await appDir.create(recursive: true);
+    final dbPath = '${appDir.path}${Platform.pathSeparator}loose_ends.db';
     final cPath = _stringToCString(dbPath);
     _storeHandle = _looseEndsOpen!(cPath);
     _freeCString(cPath);
@@ -106,10 +108,10 @@ class LooseEndsBridgeLinux {
       final exePath = Platform.resolvedExecutable;
       final exeDir = p.dirname(exePath);
       candidates.addAll([
-        p.join(exeDir, 'libloose_ends_native.so'),
-        p.join(exeDir, 'lib', 'libloose_ends_native.so'),
-        p.join(Directory.current.path, 'native', 'target', 'debug', 'libloose_ends_native.so'),
-        p.join(Directory.current.path, 'app', 'native', 'target', 'debug', 'libloose_ends_native.so'),
+        '${exeDir}${Platform.pathSeparator}libloose_ends_native.so',
+        '${exeDir}${Platform.pathSeparator}lib${Platform.pathSeparator}libloose_ends_native.so',
+        '${Directory.current.path}${Platform.pathSeparator}native${Platform.pathSeparator}target${Platform.pathSeparator}debug${Platform.pathSeparator}libloose_ends_native.so',
+        '${Directory.current.path}${Platform.pathSeparator}app${Platform.pathSeparator}native${Platform.pathSeparator}target${Platform.pathSeparator}debug${Platform.pathSeparator}libloose_ends_native.so',
       ]);
     }
 
