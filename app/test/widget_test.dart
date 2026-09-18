@@ -58,27 +58,22 @@ void main() {
       await LooseEndsBridge.init();
     });
 
-    test('ingestText returns a single fallback draft for arbitrary text',
+    test('ingestText returns no fabricated draft when native side is unavailable',
         () async {
       final drafts = await LooseEndsBridge.ingestText('pay Lena 20 by Friday');
-      expect(drafts, hasLength(1));
-      expect(drafts.first.direction, 'unclear');
-      expect(drafts.first.party, isNull);
-      expect(drafts.first.overallConfidence, 'low');
-      expect(drafts.first.description, contains('pay Lena 20 by Friday'));
+      expect(drafts, isEmpty);
     });
 
-    test('ingestText truncates fallback description to 80 chars + ellipsis',
+    test('ingestText returns no fabricated draft for long arbitrary text',
         () async {
       final long = 'word ' * 100;
       final drafts = await LooseEndsBridge.ingestText(long);
-      expect(drafts.first.description.length, lessThanOrEqualTo(83));
-      expect(drafts.first.description, endsWith('...'));
+      expect(drafts, isEmpty);
     });
 
-    test('ingestText preserves short text verbatim', () async {
+    test('ingestText returns no fabricated draft for short arbitrary text', () async {
       final drafts = await LooseEndsBridge.ingestText('short');
-      expect(drafts.first.description, 'short');
+      expect(drafts, isEmpty);
     });
 
     test('confirmDraft returns null when not initialized', () async {
@@ -230,7 +225,7 @@ void main() {
       expect(await LooseEndsBridge.confirmDraft(d), 42);
     });
 
-    test('PlatformException from native falls back gracefully', () async {
+    test('PlatformException from native returns no fabricated extraction', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (call) async {
         if (call.method == 'init') return true;
@@ -238,8 +233,7 @@ void main() {
       });
       await LooseEndsBridge.init();
       final drafts = await LooseEndsBridge.ingestText('whatever');
-      expect(drafts, hasLength(1));
-      expect(drafts.first.overallConfidence, 'low');
+      expect(drafts, isEmpty);
     });
   });
 
