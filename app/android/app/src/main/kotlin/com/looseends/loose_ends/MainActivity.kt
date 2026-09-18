@@ -49,6 +49,30 @@ class MainActivity : FlutterActivity() {
                     "listDrafts" -> {
                         result.success(jsonArrayToList(bridge.listDrafts()))
                     }
+                    "createCommitment" -> {
+                        val description = call.argument<String>("description") ?: ""
+                        val direction = call.argument<String>("direction") ?: "unclear"
+                        if (direction == "unclear") {
+                            return@setMethodCallHandler result.error("bad_args", "firm direction required", null)
+                        }
+                        val id = bridge.createCommitment(
+                            description,
+                            direction,
+                            call.argument<String>("expected_date"),
+                            call.argument<String>("party")
+                        )
+                        result.success(id)
+                    }
+                    "resolveCommitment" -> {
+                        val id = (call.argument<Number>("id"))?.toLong()
+                            ?: return@setMethodCallHandler result.error("bad_args", "id required", null)
+                        result.success(bridge.resolveCommitment(id, call.argument<String>("note")))
+                    }
+                    "snoozeCommitment" -> {
+                        val id = (call.argument<Number>("id"))?.toLong()
+                            ?: return@setMethodCallHandler result.error("bad_args", "id required", null)
+                        result.success(bridge.snoozeCommitment(id))
+                    }
                     else -> result.notImplemented()
                 }
             }
