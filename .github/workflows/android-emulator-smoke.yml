@@ -53,17 +53,23 @@ jobs:
             adb install -r artifacts/app-release.apk
             adb shell am force-stop com.looseends.loose_ends
             adb logcat -c
-            adb shell monkey -p com.looseends.loose_ends 1
+            START_STATUS=0
+            adb shell am start -W -n com.looseends.loose_ends/.MainActivity > artifacts/start.txt 2>&1 || START_STATUS=$?
             sleep 12
-            adb shell pidof com.looseends.loose_ends
-            adb shell dumpsys window windows | grep -E 'mCurrentFocus|mFocusedApp' || true
-            adb exec-out screencap -p > artifacts/startup.png
-            adb shell uiautomator dump /sdcard/window.xml
-            adb pull /sdcard/window.xml artifacts/window.xml
+            APP_PID="$(adb shell pidof com.looseends.loose_ends || true)"
+            echo "APP_PID=$APP_PID"
+            adb shell dumpsys window windows > artifacts/windows.txt 2>&1 || true
+            adb shell dumpsys activity activities > artifacts/activities.txt 2>&1 || true
+            adb exec-out screencap -p > artifacts/startup.png 2> artifacts/screenshot-error.txt || true
+            adb shell uiautomator dump /sdcard/window.xml > artifacts/uiautomator.txt 2>&1 || true
+            adb pull /sdcard/window.xml artifacts/window.xml > artifacts/uiautomator-pull.txt 2>&1 || true
             adb logcat -d -v threadtime > artifacts/logcat.txt
-            adb shell dumpsys activity activities > artifacts/activities.txt
-            if grep -Eq 'FATAL EXCEPTION|Process: com\.looseends\.loose_ends' artifacts/logcat.txt; then
-              echo "Application crash signature found in logcat"
+            CRASH=0
+            if grep -Eq 'FATAL EXCEPTION|Process: com\.looseends\.loose_ends|UnsatisfiedLinkError|NoClassDefFoundError|SIGSEGV|SIGABRT' artifacts/logcat.txt; then
+              CRASH=1
+            fi
+            if [ "$START_STATUS" -ne 0 ] || [ -z "$APP_PID" ] || [ "$CRASH" -ne 0 ]; then
+              echo "Android smoke test failed"
               exit 1
             fi
 
