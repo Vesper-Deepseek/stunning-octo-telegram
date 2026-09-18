@@ -3,6 +3,9 @@ package com.looseends.loose_ends
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import android.app.Activity
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import java.io.File
 import io.flutter.plugin.common.MethodChannel
@@ -13,6 +16,16 @@ class MainActivity : FlutterActivity() {
     private val channelName = "com.looseends/core"
     private val modelPickRequestCode = 4242
     private var pendingModelResult: MethodChannel.Result? = null
+
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            requestPermissions(
+                arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                4243
+            )
+        }
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -102,6 +115,25 @@ class MainActivity : FlutterActivity() {
                             ?: return@setMethodCallHandler result.error("bad_args", "id required", null)
                         result.success(bridge.snoozeCommitment(id))
                     }
+                    "scheduleReminder" -> {
+                        val id = (call.argument<Number>("id"))?.toInt()
+                            ?: return@setMethodCallHandler result.error("bad_args", "id required", null)
+                        val triggerAt = (call.argument<Number>("triggerAtMillis"))?.toLong()
+                            ?: return@setMethodCallHandler result.error("bad_args", "triggerAtMillis required", null)
+                        scheduleReminder(
+                            id,
+                            call.argument<String>("title") ?: "Loose Ends reminder",
+                            call.argument<String>("text") ?: "A commitment needs your attention.",
+                            triggerAt
+                        )
+                        result.success(true)
+                    }
+                    "cancelReminder" -> {
+                        val id = (call.argument<Number>("id"))?.toInt()
+                            ?: return@setMethodCallHandler result.error("bad_args", "id required", null)
+                        cancelReminder(id)
+                        result.success(true)
+                    }
                     else -> result.notImplemented()
                 }
             }
@@ -162,3 +194,36 @@ class MainActivity : FlutterActivity() {
 
     private fun modelFile(): File =
         File(filesDir, "models/qwen2.5-1.5b-instruct-q4_k_m.gguf")
+
+
+    private fun scheduleReminder(
+        id: Int,
+        title: String,
+        text: String,
+        triggerAtMillis: Long
+    ) {
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(this, ReminderReceiver::class.java).apply {
+            putExtra("commitment_id", id)
+            putExtra("title", title)
+            putExtra("text", text)
+        }
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+            (if (android.os.Build.VERSION.SDK_INT >= 23) PendingIntent.FLAG_IMMUTABLE else 0)
+        val pending = PendingIntent.getBroadcast(this, id, intent, flags)
+        alarmManager.setAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            triggerAtMillis,
+            pending
+        )
+    }
+
+    private fun cancelReminder(id: Int) {
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(this, ReminderReceiver::class.java)
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+            (if (android.os.Build.VERSION.SDK_INT >= 23) PendingIntent.FLAG_IMMUTABLE else 0)
+        val pending = PendingIntent.getBroadcast(this, id, intent, flags)
+        alarmManager.cancel(pending)
+        pending.cancel()
+    }
