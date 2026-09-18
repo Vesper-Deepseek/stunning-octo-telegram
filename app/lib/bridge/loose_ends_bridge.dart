@@ -29,7 +29,7 @@ class LooseEndsBridge {
         return;
       }
     } on PlatformException catch (e) {
-      debugPrint('Bridge init failed: ' + e.message.toString());
+      debugPrint('Bridge init failed: ${e.message}');
     } on MissingPluginException {
       // Linux desktop can fall through to direct FFI.
     }
@@ -38,7 +38,7 @@ class LooseEndsBridge {
         await LooseEndsBridgeLinux.init();
         _initialized = true;
       } catch (e) {
-        debugPrint('Linux native bridge unavailable: ' + e.toString());
+        debugPrint('Linux native bridge unavailable: $e');
       }
     }
   }
@@ -68,7 +68,7 @@ class LooseEndsBridge {
       final list = result is List ? result : const [];
       return list.cast<Map>().map(_draftFromMap).toList();
     } on PlatformException catch (e) {
-      debugPrint('Text extraction failed: ' + e.message.toString());
+      debugPrint('Text extraction failed: ${e.message}');
       return const [];
     } on MissingPluginException {
       return const [];
