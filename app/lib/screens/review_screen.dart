@@ -88,7 +88,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<Direction>(
-                  value: direction,
+                  initialValue: direction,
                   decoration: const InputDecoration(
                     labelText: 'Direction',
                     border: OutlineInputBorder(),
@@ -184,8 +184,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
                           runSpacing: 6,
                           children: [
                             _badge(dir.displayName, _directionColor(dir)),
-                            if (d.party != null) _badge('Party: ' + d.party!, Colors.blue),
-                            _badge('Source: ' + _provenanceName(d.sourceProvenance), Colors.blueGrey),
+                            if (d.party != null) _badge('Party: ${d.party}', Colors.blue),
+                            _badge('Source: ${_provenanceName(d.sourceProvenance)}', Colors.blueGrey),
                             if (d.overallConfidence == 'low' ||
                                 d.partyConfidence == 'low' ||
                                 d.dateConfidence == 'low')
