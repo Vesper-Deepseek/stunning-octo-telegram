@@ -64,6 +64,17 @@ class NativeBridge private constructor() {
         }
     }
 
+    fun listDrafts(): JSONArray? {
+        val handle = store
+        if (handle == 0L) return null
+        val json = looseEndsListDrafts(handle) ?: return null
+        return try {
+            JSONArray(json)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     companion object {
         init {
             try {
@@ -97,5 +108,6 @@ class NativeBridge private constructor() {
         @JvmStatic private external fun looseEndsListOpen(
             handle: Long, direction: String, year: Int, month: Int, day: Int
         ): String?
+        @JvmStatic private external fun looseEndsListDrafts(handle: Long): String?
     }
 }
