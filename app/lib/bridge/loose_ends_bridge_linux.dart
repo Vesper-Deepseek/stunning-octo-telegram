@@ -60,7 +60,7 @@ class LooseEndsBridgeLinux {
     final home = Platform.environment['HOME'];
     final dataRoot = Platform.environment['XDG_DATA_HOME'] ??
         (home == null ? Directory.current.path : '$home/.local/share');
-    final appDir = Directory('${dataRoot}${Platform.pathSeparator}loose_ends');
+    final appDir = Directory('$dataRoot${Platform.pathSeparator}loose_ends');
     await appDir.create(recursive: true);
     final dbPath = '${appDir.path}${Platform.pathSeparator}loose_ends.db';
     final cPath = _stringToCString(dbPath);
@@ -106,10 +106,12 @@ class LooseEndsBridgeLinux {
 
     if (Platform.isLinux) {
       final exePath = Platform.resolvedExecutable;
-      final exeDir = p.dirname(exePath);
+      final separator = Platform.pathSeparator;
+      final cut = exePath.lastIndexOf(separator);
+      final exeDir = cut >= 0 ? exePath.substring(0, cut) : Directory.current.path;
       candidates.addAll([
-        '${exeDir}${Platform.pathSeparator}libloose_ends_native.so',
-        '${exeDir}${Platform.pathSeparator}lib${Platform.pathSeparator}libloose_ends_native.so',
+        '$exeDir${Platform.pathSeparator}libloose_ends_native.so',
+        '$exeDir${Platform.pathSeparator}lib${Platform.pathSeparator}libloose_ends_native.so',
         '${Directory.current.path}${Platform.pathSeparator}native${Platform.pathSeparator}target${Platform.pathSeparator}debug${Platform.pathSeparator}libloose_ends_native.so',
         '${Directory.current.path}${Platform.pathSeparator}app${Platform.pathSeparator}native${Platform.pathSeparator}target${Platform.pathSeparator}debug${Platform.pathSeparator}libloose_ends_native.so',
       ]);
