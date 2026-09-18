@@ -11,6 +11,7 @@ loose-ends-core = { path = "../../core", default-features = false }
 chrono = "0.4"
 serde_json = "1"
 flutter_rust_bridge = "2.13.0"
+tokio = { version = "1", features = ["rt-multi-thread", "sync"] }
 jni-sys = { version = "0.4", optional = true }
 
 [features]
@@ -18,6 +19,7 @@ jni = ["jni-sys"]
 neural = ["loose-ends-core/neural"]
 frb = ["flutter_rust_bridge"]
 frb-neural = ["frb", "loose-ends-core/neural"]
+voice = ["loose-ends-core/voice"]
 
 [profile.release]
 opt-level = "z"
