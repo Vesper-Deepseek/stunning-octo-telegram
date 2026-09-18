@@ -81,8 +81,8 @@ object ModelDownloadManager {
                 "sha256" to spec.sha256,
                 "description" to spec.description,
                 "downloaded" to downloaded,
-                "ready" to downloaded && selected == spec.id,
-                "selected" to selected == spec.id
+                "ready" to (downloaded && selected == spec.id),
+                "selected" to (selected == spec.id)
             )
         }
         val custom = File(root, "custom-import.gguf")
@@ -94,8 +94,8 @@ object ModelDownloadManager {
                 "name" to custom.name,
                 "sizeBytes" to custom.length(),
                 "sha256" to sha256(custom),
-                "ready" to selected == CUSTOM_ID,
-                "selected" to selected == CUSTOM_ID,
+                "ready" to (selected == CUSTOM_ID),
+                "selected" to (selected == CUSTOM_ID),
                 "verified" to false
             ) else null,
             "activeDownload" to active
