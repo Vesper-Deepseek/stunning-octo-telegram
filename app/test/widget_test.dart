@@ -11,7 +11,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('App launches and shows home screen', (WidgetTester tester) async {
-    await tester.pumpWidget(const LooseEndsApp());
+    await tester.pumpWidget(const LooseEndsApp(showOnboarding: false));
     await tester.pump();
 
     expect(find.text('Loose Ends'), findsOneWidget);
