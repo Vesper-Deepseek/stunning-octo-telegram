@@ -12,7 +12,6 @@ dependencies:
   flutter_rust_bridge: ^2.13.0
 
 dev_dependencies:
-  flutter_rust_bridge_codegen: ^2.13.0
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
