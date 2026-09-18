@@ -12,7 +12,7 @@ void main() {
 
   testWidgets('App launches and shows home screen', (WidgetTester tester) async {
     await tester.pumpWidget(const LooseEndsApp(showOnboarding: false));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Loose Ends'), findsOneWidget);
     expect(find.text('Capture'), findsOneWidget);
