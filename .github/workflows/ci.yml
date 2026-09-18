@@ -35,6 +35,10 @@ jobs:
         working-directory: app/native
         run: cargo fmt
 
+      - name: Synchronize core lockfile
+        working-directory: core
+        run: cargo generate-lockfile
+
       - name: Apply core Clippy fixes
         working-directory: core
         run: cargo clippy --all-targets --locked --fix --allow-dirty --allow-staged -- -D warnings -A dead_code
@@ -125,7 +129,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .gitignore core app/native
+          git add .gitignore core/Cargo.lock core app/native
           git commit -m "ci: format and validate"
           git push origin HEAD:${GITHUB_REF_NAME}
 
