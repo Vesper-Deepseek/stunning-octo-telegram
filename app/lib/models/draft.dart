@@ -1,10 +1,6 @@
 /// A candidate commitment extracted from text, pending user review.
 class Draft {
-  /// The persistent draft id returned by the Rust core, when available.
-  ///
-  /// Fallback drafts created without a native backend do not have an id and
-  /// therefore cannot be confirmed through the native bridge.
-  final int? id;
+  final int id;
   final String description;
   final String direction; // 'user_owes' | 'owed_to_user' | 'unclear'
   final String? expectedDate;
@@ -13,8 +9,8 @@ class Draft {
   final String dateConfidence;
   final String overallConfidence;
 
-  Draft({
-    this.id,
+  const Draft({
+    this.id = 0,
     required this.description,
     required this.direction,
     this.expectedDate,
