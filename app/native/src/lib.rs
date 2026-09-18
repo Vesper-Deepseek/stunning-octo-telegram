@@ -32,11 +32,6 @@ mod jni_bridge {
         JNINativeMethod, JavaVM, JNI_OK, JNI_VERSION_1_6,
     };
 
-    #[repr(C)]
-    struct _JavaVM {
-        functions: *const JNIInvokeInterface_,
-    }
-
     unsafe extern "C" fn native_loose_ends_open(
         env: JNIEnv,
         _class: jclass,
@@ -154,12 +149,19 @@ mod jni_bridge {
     /// Registers the native bridge methods with the Android JVM and returns the JNI version.
     ///
     /// # Safety
-    /// The JVM must pass a valid `JavaVM` pointer and reserved argument according to the JNI
-    /// invocation contract. This function is called by the JVM during native library loading.
+    /// The JVM must pass a valid pointer to a JNI `JavaVM` handle and reserved argument
+    /// according to the JNI invocation contract. This function is called by the JVM during
+    /// native library loading.
     #[no_mangle]
-    pub unsafe extern "C" fn JNI_OnLoad(vm: JavaVM, _reserved: *mut c_void) -> jint {
+    pub unsafe extern "C" fn JNI_OnLoad(vm: *mut JavaVM, _reserved: *mut c_void) -> jint {
+        if vm.is_null() {
+            return -1;
+        }
         let mut env_ptr: *mut c_void = ptr::null_mut();
-        let vm_interface = (*(vm as *mut _JavaVM)).functions;
+        let vm_interface = *vm;
+        if vm_interface.is_null() {
+            return -1;
+        }
         let get_env = (*vm_interface).v1_2.GetEnv;
         if get_env(
             vm,
