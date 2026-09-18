@@ -46,6 +46,7 @@ jobs:
           VERSION=$(sed -n 's/^version: \([0-9][^+[:space:]]*\).*/\1/p' app/pubspec.yaml)
           TAG="v${VERSION}"
           APK="app/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
+          test -s "$APK"
           gh release create "$TAG" "$APK" \
             --repo "${{ github.repository }}" \
             --target "${{ github.event.workflow_run.head_sha }}" \
