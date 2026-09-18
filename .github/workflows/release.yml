@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: true
+
 jobs:
   release:
     if: >-
@@ -46,8 +50,19 @@ jobs:
           TAG="v${VERSION}"
           APK="app/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
           test -s "$APK"
-          gh release create "$TAG" "$APK" \
-            --repo "${{ github.repository }}" \
-            --target "${{ github.event.workflow_run.head_sha }}" \
-            --title "Loose Ends ${TAG}" \
-            --notes "Verified Android arm64 release built from ${{ github.event.workflow_run.head_sha }}."
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK" \
+              --repo "${{ github.repository }}" \
+              --clobber
+            gh release edit "$TAG" \
+              --repo "${{ github.repository }}" \
+              --target "${{ github.event.workflow_run.head_sha }}" \
+              --title "Loose Ends ${TAG}" \
+              --notes "Verified Android arm64 release built from ${{ github.event.workflow_run.head_sha }}."
+          else
+            gh release create "$TAG" "$APK" \
+              --repo "${{ github.repository }}" \
+              --target "${{ github.event.workflow_run.head_sha }}" \
+              --title "Loose Ends ${TAG}" \
+              --notes "Verified Android arm64 release built from ${{ github.event.workflow_run.head_sha }}."
+          fi
