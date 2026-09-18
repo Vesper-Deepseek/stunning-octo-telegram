@@ -12,6 +12,13 @@ import 'loose_ends_bridge_linux.dart';
 /// On Android, uses the MethodChannel/JNI bridge.
 class LooseEndsBridge {
   static const _channel = MethodChannel('com.looseends/core');
+  static const _modelProgressChannel = EventChannel('com.looseends/model_progress');
+  static Stream<Map<String, dynamic>> get modelProgress =>
+      _modelProgressChannel.receiveBroadcastStream().map(
+        (event) => event is Map
+            ? event.map((key, value) => MapEntry(key.toString(), value))
+            : <String, dynamic>{},
+      );
   static bool _initialized = false;
   static bool _channelAvailable = false;
 
@@ -141,6 +148,123 @@ class LooseEndsBridge {
       return const [];
     } on MissingPluginException {
       return const [];
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> modelCatalog() async {
+    if (!_initialized) return const [];
+    try {
+      final result = await _channel.invokeMethod('models');
+      final list = result is List ? result : const [];
+      return list.cast<Map>().map(
+        (m) => m.map((key, value) => MapEntry(key.toString(), value)),
+      ).toList();
+    } on PlatformException {
+      return const [];
+    } on MissingPluginException {
+      return const [];
+    }
+  }
+
+  static Future<Map<String, dynamic>> modelStatus() async {
+    if (!_initialized) return const {};
+    try {
+      final result = await _channel.invokeMethod('modelStatus');
+      return result is Map
+          ? result.map((key, value) => MapEntry(key.toString(), value))
+          : const {};
+    } on PlatformException {
+      return const {};
+    } on MissingPluginException {
+      return const {};
+    }
+  }
+
+  static Future<String?> downloadModel(
+    String modelId, {
+    bool allowMobile = false,
+  }) async {
+    if (!_initialized) return 'Native bridge unavailable.';
+    try {
+      final result = await _channel.invokeMethod<Map>('startModelDownload', {
+        'modelId': modelId,
+        'allowMobile': allowMobile,
+      });
+      if (result == null) return 'Model download failed.';
+      return result['ok'] == true ? null : result['message']?.toString();
+    } on PlatformException catch (e) {
+      return e.message ?? 'Model download failed.';
+    } on MissingPluginException {
+      return 'Native bridge unavailable.';
+    }
+  }
+
+  static Future<void> cancelModelDownload() async {
+    if (!_initialized) return;
+    try {
+      await _channel.invokeMethod('cancelModelDownload');
+    } on PlatformException {
+      // The native side also tears down the partial file on cancellation.
+    } on MissingPluginException {
+      // No native side.
+    }
+  }
+
+  static Future<bool> selectModel(String modelId) async {
+    if (!_initialized) return false;
+    try {
+      return await _channel.invokeMethod<bool>('selectModel', {'modelId': modelId}) ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  static Future<bool> deleteModel(String modelId) async {
+    if (!_initialized) return false;
+    try {
+      return await _channel.invokeMethod<bool>('deleteModel', {'modelId': modelId}) ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  static Future<Map<String, dynamic>?> pickCustomGguf() async {
+    if (!_initialized) return null;
+    try {
+      final result = await _channel.invokeMethod('pickCustomGguf');
+      return result is Map
+          ? result.map((key, value) => MapEntry(key.toString(), value))
+          : null;
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
+  static Future<bool> markOnboardingComplete() async {
+    if (!_initialized) return false;
+    try {
+      return await _channel.invokeMethod<bool>('markOnboardingComplete') ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  static Future<bool> shouldShowOnboarding() async {
+    if (!_initialized) return false;
+    try {
+      return await _channel.invokeMethod<bool>('shouldShowOnboarding') ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
     }
   }
 
