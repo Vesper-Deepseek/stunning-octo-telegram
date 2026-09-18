@@ -146,7 +146,7 @@ class LooseEndsBridgeLinux {
     final json = jsonDecode(resultStr) as Map<String, dynamic>;
     final drafts = (json['drafts'] as List).cast<Map>().map((m) {
       return {
-        'id': (m['id'] as num?)?.toInt(),
+        'id': m['id'] as int,
         'description': m['description'] as String,
         'direction': m['direction'] as String,
         'expected_date': m['expected_date'] as String?,
@@ -166,7 +166,6 @@ class LooseEndsBridgeLinux {
     String? dateOverride,
   }) {
     _checkStore();
-    final draftId = (draft['id'] as num?)?.toInt() ?? 0;
     final descC = _stringToCString(descriptionOverride ?? draft['description'] as String);
     final dirC = _stringToCString(directionOverride ?? draft['direction'] as String);
     final dateC = _stringToCString(dateOverride ?? draft['expected_date'] as String? ?? '');
@@ -174,7 +173,7 @@ class LooseEndsBridgeLinux {
 
     final id = _looseEndsConfirmDraft!(
       _storeHandle!,
-      draftId,
+      draft['id'] as int? ?? 0,
       descC,
       dirC,
       dateC,
@@ -208,7 +207,7 @@ class LooseEndsBridgeLinux {
     final list = jsonDecode(resultStr) as List;
     return list.cast<Map>().map((m) {
       return {
-        'id': (m['id'] as num).toInt(),
+        'id': m['id'] as int,
         'description': m['description'] as String,
         'direction': m['direction'] as String,
         'expected_date': m['expected_date'] as String?,
