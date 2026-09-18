@@ -4,6 +4,7 @@ import 'review_screen.dart';
 import 'owe_you_screen.dart';
 import 'owed_to_you_screen.dart';
 import '../models/direction.dart';
+import '../bridge/loose_ends_bridge.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,7 +14,20 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final int _pendingDrafts = 0;
+  int _pendingDrafts = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshDraftCount();
+  }
+
+  Future<void> _refreshDraftCount() async {
+    final drafts = await LooseEndsBridge.listDrafts();
+    if (mounted) {
+      setState(() => _pendingDrafts = drafts.length);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   MaterialPageRoute(builder: (_) => const ReviewScreen()),
                 );
+                await _refreshDraftCount();
               },
             ),
           ),
