@@ -40,7 +40,7 @@ object ModelDownloadManager {
             name = "MiniCPM5 2B",
             fileName = "MiniCPM5-2B-Q4_K_M.gguf",
             sizeBytes = 1_561_318_368L,
-            sha256 = "05de65cd95d8c310bdfabeca63692f199653a88bee910ec607448512f27a63d8",
+            sha256 = "ec2d5801640099e97d8d7e8003ad4d81f336e757811f03a26173dddf386602fd",
             url = "https://huggingface.co/openbmb/MiniCPM5-2B-GGUF/resolve/main/MiniCPM5-2B-Q4_K_M.gguf?download=true",
             description = "Larger and more capable for complex or multi-step commitment extraction."
         )
