@@ -701,7 +701,10 @@ pub unsafe extern "C" fn loose_ends_list_open(
                         "description": c.description,
                         "direction": format!("{:?}", c.direction).to_lowercase(),
                         "expected_date": c.expected_date,
-                        "party": c.owed_to,
+                        "party": match dir {
+                            CoreDirection::UserOwes => c.owed_to,
+                            CoreDirection::OwedToUser => c.owed_by,
+                        },
                         "aging_action": match a {
                             PlanAction::SurfaceNow => "surface",
                             PlanAction::Snooze { .. } => "snooze",
@@ -849,14 +852,25 @@ pub unsafe extern "C" fn loose_ends_create_commitment(
     let date = cstr_to_owned(expected_date);
     let party = cstr_to_owned(party);
 
-    let new = NewCommitment {
-        description: &desc,
-        direction: dir,
-        expected_date: date.as_deref(),
-        owed_by_party: Some("user"),
-        owed_to_party: party.as_deref(),
-        provenance: Provenance::Manual,
-        confidence: Default::default(),
+    let new = match dir {
+        CoreDirection::UserOwes => NewCommitment {
+            description: &desc,
+            direction: dir,
+            expected_date: date.as_deref(),
+            owed_by_party: Some("user"),
+            owed_to_party: party.as_deref(),
+            provenance: Provenance::Manual,
+            confidence: Default::default(),
+        },
+        CoreDirection::OwedToUser => NewCommitment {
+            description: &desc,
+            direction: dir,
+            expected_date: date.as_deref(),
+            owed_by_party: party.as_deref(),
+            owed_to_party: Some("user"),
+            provenance: Provenance::Manual,
+            confidence: Default::default(),
+        },
     };
     handle.store.create_commitment(new).unwrap_or_default()
 }
