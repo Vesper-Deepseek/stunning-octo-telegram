@@ -72,6 +72,10 @@ jobs:
               raise SystemExit("undated planner branch not found")
           path.write_text(text)
 
+      - name: Resolve native neural dependency lockfile
+        working-directory: app/native
+        run: cargo check --features jni,neural
+
       - name: Apply native bridge Clippy fixes
         working-directory: app/native
         run: cargo clippy --locked --features jni --fix --allow-dirty --allow-staged -- -D warnings -A dead_code
