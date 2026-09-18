@@ -14,6 +14,10 @@ use loose_ends_core::{
 #[cfg(feature = "neural")]
 use loose_ends_core::neural::{NeuralExtractor, ProvenancePath};
 
+pub mod api;
+#[cfg(feature = "frb")]
+mod frb_generated;
+
 pub struct StoreHandle {
     store: Store,
     #[cfg(feature = "neural")]
