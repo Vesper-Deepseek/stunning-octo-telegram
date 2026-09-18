@@ -38,9 +38,49 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Build release APK
+      - name: Install Android SDK components
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;28.2.13676358"
+
+      - name: Install Rust Android targets
+        run: |
+          rustup toolchain install stable
+          rustup default stable
+          rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android
+
+      - name: Build native Rust libraries for all Android ABIs
         working-directory: app
-        run: flutter build apk --release --target-platform android-arm64 --split-per-abi
+        env:
+          NDK_VERSION: 28.2.13676358
+          ANDROID_API: 24
+        run: |
+          NDK_DIR="${ANDROID_HOME}/ndk/${NDK_VERSION}"
+          TOOLCHAIN="${NDK_DIR}/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          export AR_aarch64_linux_android="${TOOLCHAIN}/llvm-ar"
+          export AR_armv7_linux_androideabi="${TOOLCHAIN}/llvm-ar"
+          export AR_x86_64_linux_android="${TOOLCHAIN}/llvm-ar"
+          export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER="${TOOLCHAIN}/aarch64-linux-android${ANDROID_API}-clang"
+          export CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER="${TOOLCHAIN}/armv7a-linux-androideabi${ANDROID_API}-clang"
+          export CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER="${TOOLCHAIN}/x86_64-linux-android${ANDROID_API}-clang"
+          export CC_aarch64_linux_android="${TOOLCHAIN}/aarch64-linux-android${ANDROID_API}-clang"
+          export CC_armv7_linux_androideabi="${TOOLCHAIN}/armv7a-linux-androideabi${ANDROID_API}-clang"
+          export CC_x86_64_linux_android="${TOOLCHAIN}/x86_64-linux-android${ANDROID_API}-clang"
+
+          for target in aarch64-linux-android armv7-linux-androideabi x86_64-linux-android; do
+            cargo build --manifest-path native/Cargo.toml --locked --release --target "${target}" --features jni
+          done
+
+          mkdir -p android/app/src/main/jniLibs/arm64-v8a
+          mkdir -p android/app/src/main/jniLibs/armeabi-v7a
+          mkdir -p android/app/src/main/jniLibs/x86_64
+          cp native/target/aarch64-linux-android/release/libloose_ends_native.so             android/app/src/main/jniLibs/arm64-v8a/libloose_ends_native.so
+          cp native/target/armv7-linux-androideabi/release/libloose_ends_native.so             android/app/src/main/jniLibs/armeabi-v7a/libloose_ends_native.so
+          cp native/target/x86_64-linux-android/release/libloose_ends_native.so             android/app/src/main/jniLibs/x86_64/libloose_ends_native.so
+
+      - name: Build universal release APK
+        working-directory: app
+        run: flutter build apk --release
 
       - name: Create GitHub release and upload APK
         env:
@@ -48,7 +88,11 @@ jobs:
         run: |
           VERSION=$(sed -n 's/^version: \([0-9][^+[:space:]]*\).*/\1/p' app/pubspec.yaml)
           TAG="v${VERSION}"
-          APK="app/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
+          APK="app/build/app/outputs/flutter-apk/app-release.apk"
+          test -s "$APK"
+          unzip -l "$APK" | grep -F "lib/arm64-v8a/libloose_ends_native.so"
+          unzip -l "$APK" | grep -F "lib/armeabi-v7a/libloose_ends_native.so"
+          unzip -l "$APK" | grep -F "lib/x86_64/libloose_ends_native.so"
           test -s "$APK"
           if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
             gh release upload "$TAG" "$APK" \
@@ -58,7 +102,7 @@ jobs:
               --repo "${{ github.repository }}" \
               --target "${{ github.event.workflow_run.head_sha }}" \
               --title "Loose Ends ${TAG}" \
-              --notes "Verified Android arm64 release built from ${{ github.event.workflow_run.head_sha }}."
+              --notes "Verified universal Android release built from ${{ github.event.workflow_run.head_sha }}."
           else
             gh release create "$TAG" "$APK" \
               --repo "${{ github.repository }}" \
