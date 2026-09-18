@@ -97,7 +97,7 @@ class _ModelManagerScreenState extends State<ModelManagerScreen> {
     final yes = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete ' + name + '?'),
+        title: Text('Delete $name?'),
         content: const Text('This frees local storage. You can download it again later.'),
         actions: [
           TextButton(
