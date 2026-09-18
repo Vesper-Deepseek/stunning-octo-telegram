@@ -259,6 +259,11 @@ fn cstr_to_owned(s: *const c_char) -> Option<String> {
 // C ABI wrappers (for direct use / Linux desktop)
 // ===========================================================================
 
+/// Opens a persistent store at the UTF-8 filesystem path provided by the caller.
+///
+/// # Safety
+/// `path` must be non-null and point to a valid NUL-terminated C string that remains
+/// readable for the duration of this call.
 #[no_mangle]
 pub unsafe extern "C" fn loose_ends_open(path: *const c_char) -> *mut StoreHandle {
     let cstr = unsafe { CStr::from_ptr(path) };
@@ -272,6 +277,11 @@ pub unsafe extern "C" fn loose_ends_open(path: *const c_char) -> *mut StoreHandl
     }
 }
 
+/// Creates an in-memory store and returns an opaque handle owned by the caller.
+///
+/// # Safety
+/// The returned handle must later be passed exactly once to `loose_ends_close` and
+/// must not be used after it has been closed.
 #[no_mangle]
 pub unsafe extern "C" fn loose_ends_open_in_memory() -> *mut StoreHandle {
     match Store::open_in_memory() {
@@ -280,6 +290,11 @@ pub unsafe extern "C" fn loose_ends_open_in_memory() -> *mut StoreHandle {
     }
 }
 
+/// Closes a store handle previously returned by one of the open functions.
+///
+/// # Safety
+/// `handle` must be null or a valid, live `StoreHandle` pointer returned by this
+/// library and must not have been closed already.
 #[no_mangle]
 pub unsafe extern "C" fn loose_ends_close(handle: *mut StoreHandle) {
     if !handle.is_null() {
@@ -287,6 +302,11 @@ pub unsafe extern "C" fn loose_ends_close(handle: *mut StoreHandle) {
     }
 }
 
+/// Frees a string returned by this C API.
+///
+/// # Safety
+/// `s` must be null or a pointer returned by a string-returning function in this
+/// library that has not already been freed.
 #[no_mangle]
 pub unsafe extern "C" fn loose_ends_free(s: *mut c_char) {
     if !s.is_null() {
@@ -294,6 +314,12 @@ pub unsafe extern "C" fn loose_ends_free(s: *mut c_char) {
     }
 }
 
+/// Ingests rule text into the store and returns a newly allocated JSON report.
+///
+/// # Safety
+/// `handle` must be a valid, live `StoreHandle`. `text` must be null or point to a
+/// valid NUL-terminated C string for the duration of this call. The date components
+/// must form a valid calendar date.
 #[no_mangle]
 pub unsafe extern "C" fn loose_ends_ingest_rules(
     handle: *mut StoreHandle,
@@ -355,6 +381,12 @@ pub unsafe extern "C" fn loose_ends_ingest_rules(
     }
 }
 
+/// Confirms a draft in the store, optionally overriding its fields.
+///
+/// # Safety
+/// `handle` must be a valid, live `StoreHandle`. Each override pointer may be null;
+/// otherwise it must point to a valid NUL-terminated C string for the duration of
+/// this call.
 #[no_mangle]
 pub unsafe extern "C" fn loose_ends_confirm_draft(
     handle: *mut StoreHandle,
@@ -391,6 +423,12 @@ pub unsafe extern "C" fn loose_ends_confirm_draft(
     }
 }
 
+/// Lists open commitments for the requested direction and returns JSON text.
+///
+/// # Safety
+/// `handle` must be a valid, live `StoreHandle`, and `direction` must point to a
+/// valid NUL-terminated C string for the duration of this call. The date components
+/// must form a valid calendar date.
 #[no_mangle]
 pub unsafe extern "C" fn loose_ends_list_open(
     handle: *mut StoreHandle,
@@ -444,6 +482,12 @@ pub unsafe extern "C" fn loose_ends_list_open(
     }
 }
 
+/// Creates a commitment from C-string inputs and returns its database identifier.
+///
+/// # Safety
+/// `handle` must be a valid, live `StoreHandle`. Each pointer argument may be null
+/// where the API permits it; otherwise it must point to a valid NUL-terminated C
+/// string for the duration of this call.
 #[no_mangle]
 pub unsafe extern "C" fn loose_ends_create_commitment(
     handle: *mut StoreHandle,
