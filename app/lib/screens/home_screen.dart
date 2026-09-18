@@ -4,6 +4,7 @@ import 'manual_entry_screen.dart';
 import 'review_screen.dart';
 import 'owe_you_screen.dart';
 import 'owed_to_you_screen.dart';
+import 'settings_screen.dart';
 import '../models/direction.dart';
 import '../bridge/loose_ends_bridge.dart';
 
@@ -111,6 +112,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   MaterialPageRoute(
                     builder: (_) => const OwedToYouScreen(),
                   ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.settings, size: 32),
+              title: const Text('Settings'),
+              subtitle: const Text('AI model, privacy, and local app controls'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
                 );
               },
             ),
