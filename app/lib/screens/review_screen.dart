@@ -19,19 +19,140 @@ class _ReviewScreenState extends State<ReviewScreen> {
   void initState() {
     super.initState();
     _drafts = widget.newDrafts ?? [];
+    if (widget.newDrafts == null) {
+      _loadDrafts();
+    }
+  }
+
+  Future<void> _loadDrafts() async {
+    final drafts = await LooseEndsBridge.listDrafts();
+    if (mounted) {
+      setState(() => _drafts = drafts);
+    }
   }
 
   Future<void> _confirm(Draft draft) async {
+    final dir = Direction.fromString(draft.direction);
+    if (dir == Direction.unclear) {
+      await _editDraft(draft);
+      if (!mounted) return;
+      final index = _drafts.indexWhere((d) => d.id == draft.id);
+      if (index < 0 || Direction.fromString(_drafts[index].direction) == Direction.unclear) {
+        return;
+      }
+      draft = _drafts[index];
+    }
+
     setState(() => _busy = true);
     final id = await LooseEndsBridge.confirmDraft(draft);
     if (!mounted) return;
     setState(() {
-      _drafts.remove(draft);
+      _drafts.removeWhere((d) => d.id == draft.id);
       _busy = false;
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(id != null ? 'Saved' : 'Failed to save')),
+      SnackBar(content: Text(id != null && id != 0 ? 'Saved' : 'Failed to save')),
     );
+  }
+
+  Future<void> _editDraft(Draft draft) async {
+    final description = TextEditingController(text: draft.description);
+    final party = TextEditingController(text: draft.party ?? '');
+    final date = TextEditingController(text: draft.expectedDate ?? '');
+    var direction = Direction.fromString(draft.direction);
+
+    final edited = await showDialog<_DraftEdit>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Edit before confirming'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: description,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: party,
+                  decoration: const InputDecoration(
+                    labelText: 'Party',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<Direction>(
+                  value: direction,
+                  decoration: const InputDecoration(
+                    labelText: 'Direction',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: Direction.values.map((value) => DropdownMenuItem(
+                    value: value,
+                    child: Text(value.displayName),
+                  )).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setDialogState(() => direction = value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: date,
+                  decoration: const InputDecoration(
+                    labelText: 'Expected date (YYYY-MM-DD, optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(
+                context,
+                _DraftEdit(
+                  description.text.trim(),
+                  party.text.trim().isEmpty ? null : party.text.trim(),
+                  direction,
+                  date.text.trim().isEmpty ? null : date.text.trim(),
+                ),
+              ),
+              child: const Text('Apply'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (edited == null || !mounted) return;
+    final index = _drafts.indexWhere((d) => d.id == draft.id);
+    if (index < 0) return;
+    setState(() {
+      _drafts[index] = Draft(
+        id: draft.id,
+        description: edited.description.isEmpty ? draft.description : edited.description,
+        direction: edited.direction.name,
+        expectedDate: edited.date,
+        party: edited.party,
+        partyConfidence: edited.party == draft.party ? draft.partyConfidence : 'low',
+        dateConfidence: edited.date == draft.expectedDate ? draft.dateConfidence : 'low',
+        overallConfidence: edited.direction == Direction.unclear ? 'low' : draft.overallConfidence,
+        sourceProvenance: draft.sourceProvenance,
+        createdAt: draft.createdAt,
+      );
+    });
   }
 
   void _dismiss(Draft draft) {
@@ -58,13 +179,16 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
                           children: [
                             _badge(dir.displayName, _directionColor(dir)),
-                            const SizedBox(width: 8),
-                            if (d.party != null) _badge('Party: ${d.party}', Colors.blue),
-                            const SizedBox(width: 8),
-                            if (d.overallConfidence == 'low')
+                            if (d.party != null) _badge('Party: ' + d.party!, Colors.blue),
+                            _badge('Source: ' + _provenanceName(d.sourceProvenance), Colors.blueGrey),
+                            if (d.overallConfidence == 'low' ||
+                                d.partyConfidence == 'low' ||
+                                d.dateConfidence == 'low')
                               const Icon(Icons.warning_amber, color: Colors.orange, size: 18),
                           ],
                         ),
@@ -86,6 +210,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
                             TextButton(
                               onPressed: _busy ? null : () => _dismiss(d),
                               child: const Text('Dismiss'),
+                            ),
+                            TextButton(
+                              onPressed: _busy ? null : () => _editDraft(d),
+                              child: const Text('Edit'),
                             ),
                             const SizedBox(width: 8),
                             FilledButton(
@@ -115,6 +243,19 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
+  String _provenanceName(String value) {
+    switch (value) {
+      case 'model_extracted':
+        return 'model';
+      case 'rule_extracted':
+        return 'rules';
+      case 'manual':
+        return 'manual';
+      default:
+        return value;
+    }
+  }
+
   Color _directionColor(Direction d) {
     switch (d) {
       case Direction.userOwes:
@@ -125,4 +266,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
         return Colors.grey;
     }
   }
+}
+
+class _DraftEdit {
+  final String description;
+  final String? party;
+  final Direction direction;
+  final String? date;
+
+  const _DraftEdit(this.description, this.party, this.direction, this.date);
 }
