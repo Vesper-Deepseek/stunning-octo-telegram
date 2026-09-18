@@ -100,6 +100,17 @@ class MainActivity : FlutterActivity() {
                     result.success(ModelDownloadManager.selectModel(this, modelId))
                 }
                 "pickCustomGguf" -> pickCustomModel(result)
+                "shouldShowOnboarding" -> {
+                    val prefs = getSharedPreferences("loose_ends_app", Context.MODE_PRIVATE)
+                    result.success(!prefs.getBoolean("onboarding_complete", false))
+                }
+                "markOnboardingComplete" -> {
+                    getSharedPreferences("loose_ends_app", Context.MODE_PRIVATE)
+                        .edit()
+                        .putBoolean("onboarding_complete", true)
+                        .apply()
+                    result.success(true)
+                }
                 "confirmDraft" -> {
                     val draftId = call.argument<Number>("draftId")?.toLong()
                         ?: return@setMethodCallHandler result.error("bad_args", "draftId required", null)
