@@ -46,6 +46,9 @@ class MainActivity : FlutterActivity() {
                         )
                         result.success(jsonArrayToList(json))
                     }
+                    "listDrafts" -> {
+                        result.success(jsonArrayToList(bridge.listDrafts()))
+                    }
                     else -> result.notImplemented()
                 }
             }
