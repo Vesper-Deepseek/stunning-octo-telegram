@@ -144,6 +144,53 @@ class LooseEndsBridge {
     }
   }
 
+  static Future<int?> createCommitment({
+    required String description,
+    required Direction direction,
+    String? expectedDate,
+    String? party,
+  }) async {
+    if (!_initialized || direction == Direction.unclear) return null;
+    try {
+      final result = await _channel.invokeMethod<int>('createCommitment', {
+        'description': description,
+        'direction': direction.name,
+        'expected_date': expectedDate,
+        'party': party,
+      });
+      return result;
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
+  static Future<bool> resolveCommitment(int id, {String? note}) async {
+    if (!_initialized) return false;
+    try {
+      return await _channel.invokeMethod<bool>('resolveCommitment', {
+        'id': id,
+        'note': note,
+      }) ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  static Future<bool> snoozeCommitment(int id) async {
+    if (!_initialized) return false;
+    try {
+      return await _channel.invokeMethod<bool>('snoozeCommitment', {'id': id}) ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
   static Future<List<CommitmentView>> listOpen(Direction dir) async {
     if (!_initialized) return [];
     if (Platform.isLinux && !_channelAvailable) {
