@@ -52,6 +52,36 @@ mod jni_bridge {
         }
     }
 
+    #[cfg(feature = "neural")]
+    unsafe extern "C" fn native_loose_ends_extract_text(
+        env: JNIEnv,
+        _class: jclass,
+        store_ptr: jlong,
+        text: jstring,
+        model_path: jstring,
+        year: jint,
+        month: jint,
+        day: jint,
+    ) -> jstring {
+        let text_str = jstring_to_optional_string(env, text).unwrap_or_default();
+        let model_str = jstring_to_optional_string(env, model_path).unwrap_or_default();
+        let text_c = CString::new(text_str).unwrap_or_default();
+        let model_c = CString::new(model_str).unwrap_or_default();
+        let out = super::loose_ends_extract_text(
+            store_ptr as *mut _,
+            text_c.as_ptr(),
+            model_c.as_ptr(),
+            year,
+            month as u32,
+            day as u32,
+        );
+        let result = cstr_to_owned(out).unwrap_or_default();
+        if !out.is_null() {
+            let _ = CString::from_raw(out);
+        }
+        string_to_jstring(env, &result)
+    }
+
     unsafe extern "C" fn native_loose_ends_ingest_rules(
         env: JNIEnv,
         _class: jclass,
@@ -262,6 +292,14 @@ mod jni_bridge {
                     .as_ptr()
                     .cast_mut(),
                 fnPtr: native_loose_ends_ingest_rules as *mut c_void,
+            },
+            #[cfg(feature = "neural")]
+            JNINativeMethod {
+                name: c"looseEndsExtractText".as_ptr().cast_mut(),
+                signature: c"(JLjava/lang/String;Ljava/lang/String;III)Ljava/lang/String;"
+                    .as_ptr()
+                    .cast_mut(),
+                fnPtr: native_loose_ends_extract_text as *mut c_void,
             },
             JNINativeMethod {
                 name: c"looseEndsConfirmDraft".as_ptr().cast_mut(),
