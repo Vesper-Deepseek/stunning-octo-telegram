@@ -161,6 +161,7 @@ pub fn extract_neural_with_model_path(
         return NeuralOutcome::Unavailable("empty model path".into());
     }
     let prompt = build_prompt(text, today);
+    let model_path = model_path.to_owned();
 
     // Blocking C calls cannot be interrupted; the timeout is honored by
     // abandoning this thread's result if it finishes late. The caller's UI
