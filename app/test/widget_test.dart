@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
 
 import 'package:loose_ends/main.dart';
+import 'package:loose_ends/screens/home_screen.dart';
 import 'package:loose_ends/bridge/loose_ends_bridge.dart';
 import 'package:loose_ends/models/direction.dart';
 import 'package:loose_ends/models/draft.dart';
@@ -12,9 +13,13 @@ void main() {
 
   testWidgets('App launches and shows home screen', (WidgetTester tester) async {
     await tester.pumpWidget(const LooseEndsApp(showOnboarding: false));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Loose Ends'), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
+    final appBar = tester.widget<AppBar>(find.byType(AppBar));
+    expect(appBar.title, isA<Text>());
+    expect((appBar.title! as Text).data, 'Loose Ends');
     expect(find.text('Capture'), findsOneWidget);
     expect(find.text('Review'), findsOneWidget);
     expect(find.text('You Owe'), findsOneWidget);
