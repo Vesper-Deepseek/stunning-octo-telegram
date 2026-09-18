@@ -262,7 +262,9 @@ class LooseEndsBridge {
       await _channel.invokeMethod('cancelModelDownload');
     } on PlatformException {
       // Native side removes the partial file.
-    } on MissingPluginException {}
+    } on MissingPluginException {
+      // The optional native cancellation channel is unavailable on this platform.
+    }
   }
 
   static Future<bool> selectModel(String modelId) async {
