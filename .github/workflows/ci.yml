@@ -177,6 +177,13 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Install flutter_rust_bridge_codegen
+        run: cargo install flutter_rust_bridge_codegen --version 2.13.0 --locked
+
+      - name: Generate flutter_rust_bridge bindings
+        working-directory: app
+        run: flutter_rust_bridge_codegen generate --config flutter_rust_bridge.yaml
+
       - name: Dependencies
         working-directory: app
         run: flutter pub get
