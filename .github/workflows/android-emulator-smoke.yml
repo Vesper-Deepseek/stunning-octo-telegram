@@ -47,8 +47,20 @@ jobs:
         run: |
           SDKMANAGER="$(find "${ANDROID_HOME}/cmdline-tools" -type f -path '*/bin/sdkmanager' | head -n 1)"
           test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+          "$SDKMANAGER" "ndk;${NDK_VERSION}"
           TOOLCHAIN="${ANDROID_HOME}/ndk/${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin"
           test -x "${TOOLCHAIN}/aarch64-linux-android${ANDROID_API}-clang"
+          export PATH="${TOOLCHAIN}:${PATH}"
+          export AR_aarch64_linux_android="${TOOLCHAIN}/llvm-ar"
+          export AR_armv7_linux_androideabi="${TOOLCHAIN}/llvm-ar"
+          export AR_x86_64_linux_android="${TOOLCHAIN}/llvm-ar"
+          export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER="${TOOLCHAIN}/aarch64-linux-android${ANDROID_API}-clang"
+          export CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER="${TOOLCHAIN}/armv7a-linux-androideabi${ANDROID_API}-clang"
+          export CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER="${TOOLCHAIN}/x86_64-linux-android${ANDROID_API}-clang"
+          export CC_aarch64_linux_android="${TOOLCHAIN}/aarch64-linux-android${ANDROID_API}-clang"
+          export CC_armv7_linux_androideabi="${TOOLCHAIN}/armv7a-linux-androideabi${ANDROID_API}-clang"
+          export CC_x86_64_linux_android="${TOOLCHAIN}/x86_64-linux-android${ANDROID_API}-clang"
           for target in aarch64-linux-android armv7-linux-androideabi x86_64-linux-android; do
             cargo build --manifest-path native/Cargo.toml --locked --release --target "${target}" --features jni
           done
