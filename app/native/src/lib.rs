@@ -123,6 +123,17 @@ mod jni_bridge {
         result
     }
 
+    unsafe extern "C" fn native_loose_ends_list_drafts(
+        _env: JNIEnv,
+        _class: jclass,
+        store_ptr: jlong,
+    ) -> jstring {
+        let out = super::loose_ends_list_drafts(store_ptr as *mut _);
+        let result = cstr_to_owned(out).unwrap_or_default();
+        let _ = CString::from_raw(out);
+        string_to_jstring(_env, &result)
+    }
+
     unsafe extern "C" fn native_loose_ends_create_commitment(
         env: JNIEnv,
         _class: jclass,
