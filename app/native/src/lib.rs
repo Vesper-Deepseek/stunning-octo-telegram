@@ -398,8 +398,8 @@ pub unsafe extern "C" fn loose_ends_list_drafts(handle: *mut StoreHandle) -> *mu
     let json = drafts
         .into_iter()
         .map(|d| {
-            let confidence: models::Confidence = serde_json::from_str(&d.confidence_json)
-                .unwrap_or_default();
+            let confidence: models::Confidence =
+                serde_json::from_str(&d.confidence_json).unwrap_or_default();
             serde_json::json!({
                 "id": d.id,
                 "description": d.description,
