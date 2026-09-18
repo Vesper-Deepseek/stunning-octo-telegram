@@ -75,6 +75,40 @@ class NativeBridge private constructor() {
         }
     }
 
+    fun createCommitment(
+        description: String,
+        direction: String,
+        expectedDate: String?,
+        party: String?
+    ): Long {
+        val handle = store
+        if (handle == 0L) return 0
+        return looseEndsCreateCommitment(handle, description, direction, expectedDate, party)
+    }
+
+    fun resolveCommitment(id: Long, note: String?): Boolean {
+        val handle = store
+        if (handle == 0L) return false
+        return looseEndsResolveCommitment(handle, id, note)
+    }
+
+    fun snoozeCommitment(id: Long): Boolean {
+        val handle = store
+        if (handle == 0L) return false
+        return looseEndsSnoozeCommitment(handle, id)
+    }
+
+    fun listDrafts(): JSONArray? {
+        val handle = store
+        if (handle == 0L) return null
+        val json = looseEndsListDrafts(handle) ?: return null
+        return try {
+            JSONArray(json)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     companion object {
         init {
             try {
@@ -109,5 +143,10 @@ class NativeBridge private constructor() {
             handle: Long, direction: String, year: Int, month: Int, day: Int
         ): String?
         @JvmStatic private external fun looseEndsListDrafts(handle: Long): String?
+        @JvmStatic private external fun looseEndsCreateCommitment(
+            handle: Long, description: String, direction: String, expectedDate: String?, party: String?
+        ): Long
+        @JvmStatic private external fun looseEndsResolveCommitment(handle: Long, id: Long, note: String?): Boolean
+        @JvmStatic private external fun looseEndsSnoozeCommitment(handle: Long, id: Long): Boolean
     }
 }
