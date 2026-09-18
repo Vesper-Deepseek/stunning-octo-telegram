@@ -146,6 +146,20 @@ pub fn extract_neural(
 ) -> NeuralOutcome {
     let model_path =
         std::env::var(MODEL_PATH_ENV).unwrap_or_else(|_| DEFAULT_MODEL_PATH.to_string());
+    extract_neural_with_model_path(text, today, max_tokens, timeout, &model_path)
+}
+
+/// Run one extraction attempt against an explicit local GGUF model path.
+pub fn extract_neural_with_model_path(
+    text: &str,
+    today: NaiveDate,
+    max_tokens: u32,
+    timeout: Duration,
+    model_path: &str,
+) -> NeuralOutcome {
+    if model_path.trim().is_empty() {
+        return NeuralOutcome::Unavailable("empty model path".into());
+    }
     let prompt = build_prompt(text, today);
 
     // Blocking C calls cannot be interrupted; the timeout is honored by
@@ -427,13 +441,24 @@ impl NeuralExtractor {
     /// Attempt neural extraction; fall back to rules on timeout/unavailability/
     /// unusable output. Returns candidates plus which path produced them.
     pub fn extract(&self, text: &str, today: NaiveDate) -> (Vec<CrossChecked>, ProvenancePath) {
+        let model_path =
+            std::env::var(MODEL_PATH_ENV).unwrap_or_else(|_| DEFAULT_MODEL_PATH.to_string());
+        self.extract_with_model_path(text, today, &model_path)
+    }
+
+    pub fn extract_with_model_path(
+        &self,
+        text: &str,
+        today: NaiveDate,
+        model_path: &str,
+    ) -> (Vec<CrossChecked>, ProvenancePath) {
         if self.state.lock().unwrap().is_open() {
             return (
                 self.rules_fallback(text, today),
                 ProvenancePath::RuleFallbackBreakerOpen,
             );
         }
-        match extract_neural(text, today, 700, self.cfg.timeout) {
+        match extract_neural_with_model_path(text, today, 700, self.cfg.timeout, model_path) {
             NeuralOutcome::Candidates(cands) => {
                 self.state.lock().unwrap().record_success();
                 let checked = cands
