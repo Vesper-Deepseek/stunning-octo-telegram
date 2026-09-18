@@ -35,6 +35,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: ListTile(
               leading: const Icon(Icons.memory),
               title: const Text('AI model'),
+              // ignore: prefer_interpolation_to_compose_strings
               subtitle: Text(
                 selected == null
                     ? 'No model selected — rules-only mode is active'
