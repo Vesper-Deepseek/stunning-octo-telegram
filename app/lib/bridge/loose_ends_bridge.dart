@@ -29,7 +29,6 @@ class LooseEndsBridge {
       }
     } on PlatformException catch (e) {
       debugPrint('Bridge init failed: ${e.message}');
-      return;
     } on MissingPluginException {
       // Desktop builds can fall through to the FFI implementation below.
     }
@@ -48,7 +47,7 @@ class LooseEndsBridge {
   }
 
   static Future<List<Draft>> ingestText(String text) async {
-    if (!_initialized) return _fallbackIngest(text);
+    if (!_initialized) return const [];
     if (Platform.isLinux && !_channelAvailable) {
       final maps = LooseEndsBridgeLinux.ingestText(text);
       return maps.map((m) => Draft(
@@ -77,9 +76,9 @@ class LooseEndsBridge {
             overallConfidence: m['overall_confidence'] as String,
           )).toList();
     } on PlatformException {
-      return _fallbackIngest(text);
+      return const [];
     } on MissingPluginException {
-      return _fallbackIngest(text);
+      return const [];
     }
   }
 
@@ -88,6 +87,7 @@ class LooseEndsBridge {
     String? descriptionOverride,
     Direction? directionOverride,
     String? dateOverride,
+    String? partyOverride,
   }) async {
     if (!_initialized) return null;
     if (Platform.isLinux && !_channelAvailable) {
@@ -97,7 +97,7 @@ class LooseEndsBridge {
           'description': draft.description,
           'direction': draft.direction,
           'expected_date': draft.expectedDate,
-          'party': draft.party,
+          'party': partyOverride ?? draft.party,
         },
         descriptionOverride: descriptionOverride,
         directionOverride: directionOverride?.name,
@@ -111,13 +111,36 @@ class LooseEndsBridge {
         'description': descriptionOverride ?? draft.description,
         'direction': (directionOverride ?? Direction.fromString(draft.direction)).name,
         'expected_date': dateOverride ?? draft.expectedDate,
-        'party': draft.party,
+        'party': partyOverride ?? draft.party,
       });
       return result as int?;
     } on PlatformException {
       return null;
     } on MissingPluginException {
       return null;
+    }
+  }
+
+  static Future<List<Draft>> listDrafts() async {
+    if (!_initialized) return const [];
+    try {
+      final result = await _channel.invokeMethod('listDrafts');
+      final list = result is List ? result : const [];
+      return list.cast<Map>().map((m) => Draft(
+        id: (m['id'] as num?)?.toInt() ?? 0,
+        description: m['description'] as String,
+        direction: m['direction'] as String,
+        expectedDate: m['expected_date'] as String?,
+        party: m['party'] as String?,
+        partyConfidence: m['party_confidence'] as String? ?? 'low',
+        dateConfidence: m['date_confidence'] as String? ?? 'low',
+        overallConfidence: m['overall_confidence'] as String? ?? 'low',
+        sourceProvenance: m['source_provenance'] as String? ?? 'rule_extracted',
+      )).toList();
+    } on PlatformException {
+      return const [];
+    } on MissingPluginException {
+      return const [];
     }
   }
 
@@ -155,18 +178,4 @@ class LooseEndsBridge {
     }
   }
 
-  static List<Draft> _fallbackIngest(String text) {
-    return [
-      Draft(
-        id: 0,
-        description: text.length > 80 ? '${text.substring(0, 80)}...' : text,
-        direction: 'unclear',
-        expectedDate: null,
-        party: null,
-        partyConfidence: 'low',
-        dateConfidence: 'low',
-        overallConfidence: 'low',
-      ),
-    ];
-  }
 }
