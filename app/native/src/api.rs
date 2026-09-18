@@ -49,6 +49,9 @@ impl CoreApi {
             }
         }
 
+        #[cfg(not(feature = "frb-neural"))]
+        let _ = model_path;
+
         tokio::task::spawn_blocking(move || ingest_rules_only(&store, &text, date))
             .await
             .map_err(|e| e.to_string())?
@@ -85,7 +88,7 @@ impl CoreApi {
                     id,
                     description.as_deref(),
                     direction,
-                    expected_date.as_deref(),
+                    Some(expected_date.as_deref()),
                     party.as_deref(),
                 )
                 .map_err(|e| e.to_string())
