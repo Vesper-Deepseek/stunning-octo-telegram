@@ -162,7 +162,7 @@ mod jni_bridge {
         let vm_interface = (*(vm as *mut _JavaVM)).functions;
         let get_env = (*vm_interface).v1_2.GetEnv;
         if get_env(
-            vm_interface as *mut JavaVM,
+            vm,
             &mut env_ptr as *mut *mut c_void,
             JNI_VERSION_1_6,
         ) != JNI_OK
