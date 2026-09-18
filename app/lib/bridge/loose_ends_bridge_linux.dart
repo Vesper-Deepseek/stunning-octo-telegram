@@ -59,7 +59,7 @@ class LooseEndsBridgeLinux {
 
     final home = Platform.environment['HOME'];
     final dataRoot = Platform.environment['XDG_DATA_HOME'] ??
-        (home == null ? Directory.current.path : r'$home/.local/share');
+        (home == null ? Directory.current.path : '$home/.local/share');
     final appDir = Directory('${dataRoot}${Platform.pathSeparator}loose_ends');
     await appDir.create(recursive: true);
     final dbPath = '${appDir.path}${Platform.pathSeparator}loose_ends.db';
