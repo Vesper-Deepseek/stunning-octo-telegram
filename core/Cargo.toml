@@ -7,7 +7,6 @@ edition = "2021"
 crate-type = ["rlib", "cdylib"]
 
 [dependencies]
-cmake = "=0.1.54"
 rusqlite = { version = "0.37", features = ["bundled"] }
 chrono = "0.4"
 serde = { version = "1", features = ["derive"] }
@@ -16,7 +15,7 @@ regex = "1"
 llama-cpp-2 = { version = "0.1.154", features = ["common"], optional = true }
 encoding_rs = { version = "0.8", optional = true }
 tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
-whisper_cpp = { version = "0.2.1", default-features = false, features = ["compat"], optional = true }
+whispercpp = { version = "0.2.1", default-features = false, optional = true }
 hound = { version = "3.5", optional = true }
 image = { version = "0.25.10", default-features = false, features = ["png", "jpeg", "webp"], optional = true }
 ocrs = { version = "0.13.1", default-features = false, features = ["rten"], optional = true }
