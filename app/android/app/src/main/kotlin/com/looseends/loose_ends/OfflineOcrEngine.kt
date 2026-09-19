@@ -25,6 +25,7 @@ import kotlin.math.floor
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sin
 
 /**
  * Minimal on-device PP-OCRv5 pipeline adapted from the Apache-2.0 PaddleOCR
