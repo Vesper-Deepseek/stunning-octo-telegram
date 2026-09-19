@@ -94,10 +94,9 @@ jobs:
           unzip -l ../artifacts/app-release.apk | grep -F "lib/x86_64/libloose_ends_voice.so"
 
       - name: Run Android emulator
-        timeout-minutes: 15
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 34
+          api-level: 35
           arch: x86_64
           target: google_apis
           profile: pixel_2
@@ -109,56 +108,6 @@ jobs:
           disable-animations: true
           script: |
             adb wait-for-device
-            adb shell settings put global window_animation_scale 0
-            adb shell settings put global transition_animation_scale 0
-            adb shell settings put global animator_duration_scale 0
-            adb install -r artifacts/app-release.apk
-            adb shell pm grant com.looseends.loose_ends android.permission.POST_NOTIFICATIONS || true
-            adb shell am force-stop com.looseends.loose_ends
-            adb logcat -c
-            adb shell am start -W -n com.looseends.loose_ends/.MainActivity > artifacts/release_start.txt 2>&1
-            sleep 8
-            adb shell pidof com.looseends.loose_ends > artifacts/release_app_pid.txt 2>&1 || true
-            adb shell dumpsys window windows > artifacts/release_windows.txt 2>&1 || true
-            adb shell dumpsys activity activities > artifacts/release_activities.txt 2>&1 || true
-            adb exec-out screencap -p > artifacts/release_startup.png 2> artifacts/release_screenshot-error.txt || true
-            adb shell uiautomator dump /sdcard/window.xml > artifacts/release_uiautomator.txt 2>&1 || true
-            adb pull /sdcard/window.xml artifacts/release_window.xml > artifacts/release_uiautomator-pull.txt 2>&1 || true
-            adb logcat -d -v threadtime > artifacts/release_launch_logcat.txt
-            test -s artifacts/release_app_pid.txt && grep -Eq '^[0-9]+'
-            ! grep -Eq 'FATAL EXCEPTION|Process: com\.looseends\.loose_ends|UnsatisfiedLinkError|NoClassDefFoundError|SIGSEGV|SIGABRT' artifacts/release_launch_logcat.txt
-
-            adb shell svc wifi disable || true
-            adb shell svc data disable || true
-            flutter test integration_test/mvp_smoke_test.dart -d "$ANDROID_SERIAL" --timeout 5m
-
-            adb shell svc wifi enable || true
-            adb install -r artifacts/app-release.apk
-            adb shell pm grant com.looseends.loose_ends android.permission.POST_NOTIFICATIONS || true
-            adb shell am force-stop com.looseends.loose_ends
-            adb logcat -c
-            adb shell am start -W -n com.looseends.loose_ends/.MainActivity > artifacts/final_release_start.txt 2>&1
-            sleep 8
-            adb shell pidof com.looseends.loose_ends > artifacts/final_release_pid.txt 2>&1
-            adb exec-out screencap -p > artifacts/final_release.png 2> artifacts/final_screenshot-error.txt || true
-            adb logcat -d -v threadtime > artifacts/final_release_logcat.txt
-            test -s artifacts/final_release_pid.txt && grep -Eq '^[0-9]+'
-            ! grep -Eq 'FATAL EXCEPTION|Process: com\.looseends\.loose_ends|UnsatisfiedLinkError|NoClassDefFoundError|SIGSEGV|SIGABRT' artifacts/final_release_logcat.txt
-
-      - name: Upload emulator diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-emulator-diagnostics
-          path: artifacts
-          if-no-files-found: warn
-          retention-days: 14
-; then
-                break
-              fi
-              sleep 2
-            done
-            test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1"
             adb shell settings put global window_animation_scale 0
             adb shell settings put global transition_animation_scale 0
             adb shell settings put global animator_duration_scale 0
