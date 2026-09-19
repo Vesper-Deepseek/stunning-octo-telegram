@@ -26,7 +26,7 @@ tempfile = "3"
 
 [features]
 neural = ["llama-cpp-2", "encoding_rs"]
-voice = ["whisper_cpp", "hound", "tokio"]
+voice = ["whispercpp", "hound", "tokio"]
 ocr = ["ocrs", "rten", "image"]
 multimodal = ["voice", "ocr"]
 
