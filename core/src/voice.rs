@@ -53,9 +53,7 @@ pub fn transcribe_wav<P: AsRef<Path>, M: AsRef<Path>>(
         let segment = state
             .segment(i)
             .ok_or_else(|| format!("whisper segment {i} unavailable"))?;
-        let text = segment
-            .text()
-            .map_err(|e| format!("whisper text: {e}"))?;
+        let text = segment.text().map_err(|e| format!("whisper text: {e}"))?;
         let text = text.trim();
         if text.is_empty() {
             continue;
