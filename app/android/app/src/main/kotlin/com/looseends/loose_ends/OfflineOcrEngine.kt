@@ -205,7 +205,7 @@ class OfflineOcrEngine(private val context: Context) {
                 buffer.rewind()
                 val values = FloatArray(buffer.remaining())
                 buffer.get(values)
-                return values to output.info.shape
+                return values to (output.getInfo() as ai.onnxruntime.TensorInfo).shape
             }
         } finally {
             tensor.close()
