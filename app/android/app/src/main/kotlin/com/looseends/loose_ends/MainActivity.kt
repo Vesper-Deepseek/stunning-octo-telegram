@@ -22,6 +22,7 @@ class MainActivity : FlutterActivity() {
     private var pendingModelResult: MethodChannel.Result? = null
     private var pendingCustomModelResult: MethodChannel.Result? = null
     private var progressSink: EventChannel.EventSink? = null
+    private val voiceRecorder by lazy { VoiceRecorder(cacheDir) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,6 +90,28 @@ class MainActivity : FlutterActivity() {
                     ModelDownloadManager.cancelDownload()
                     result.success(true)
                 }
+                "voiceModelStatus" -> result.success(VoiceModelManager.status(this))
+                "startVoiceModelDownload" -> {
+                    val allowMobile = call.argument<Boolean>("allowMobile") ?: false
+                    VoiceModelManager.startDownload(
+                        context = this,
+                        allowMobile = allowMobile,
+                        onProgress = { progressSink?.success(it) },
+                        onFinished = { ok, message ->
+                            runOnUiThread { result.success(mapOf("ok" to ok, "message" to message)) }
+                        }
+                    )
+                }
+                "cancelVoiceModelDownload" -> {
+                    VoiceModelManager.cancelDownload()
+                    result.success(true)
+                }
+                "startVoiceRecording" -> startVoiceRecording(result)
+                "stopVoiceRecording" -> {
+                    val file = voiceRecorder.stop()
+                    result.success(file?.absolutePath)
+                }
+                "transcribeVoice" -> transcribeVoice(call.argument<String>("wavPath"), result)
                 "deleteModel" -> {
                     val modelId = call.argument<String>("modelId")
                         ?: return@setMethodCallHandler result.error("bad_args", "modelId required", null)
@@ -186,6 +209,68 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+    }
+
+    private fun startVoiceRecording(result: MethodChannel.Result) {
+        if (android.os.Build.VERSION.SDK_INT >= 23 &&
+            checkSelfPermission(Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 4245)
+            result.error("permission_required", "Microphone permission is required. Tap the record button again after granting it.", null)
+            return
+        }
+
+        Thread {
+            try {
+                voiceRecorder.start()
+                runOnUiThread { result.success(true) }
+            } catch (e: Exception) {
+                runOnUiThread { result.error("recording_failed", e.message, null) }
+            }
+        }.start()
+    }
+
+    private fun transcribeVoice(wavPath: String?, result: MethodChannel.Result) {
+        if (wavPath.isNullOrBlank()) {
+            result.error("bad_args", "wavPath required", null)
+            return
+        }
+        val wav = java.io.File(wavPath)
+        val model = VoiceModelManager.selectedModelFile(this)
+        if (!wav.isFile) {
+            result.error("recording_missing", "The recorded audio file is unavailable.", null)
+            return
+        }
+        if (model == null) {
+            wav.delete()
+            result.error("voice_model_missing", "Download the Whisper voice model before recording.", null)
+            return
+        }
+
+        Thread {
+            try {
+                val text = NativeBridge.getInstance().transcribeWav(
+                    wav.absolutePath,
+                    model.absolutePath
+                )
+                wav.delete()
+                if (text == null) {
+                    runOnUiThread {
+                        result.error("transcription_failed", "Offline Whisper transcription failed.", null)
+                    }
+                } else {
+                    runOnUiThread { result.success(text) }
+                }
+            } catch (e: Exception) {
+                wav.delete()
+                runOnUiThread { result.error("transcription_failed", e.message, null) }
+            }
+        }.start()
+    }
+
+    override fun onDestroy() {
+        voiceRecorder.cancel()
+        super.onDestroy()
     }
 
     private fun pickCustomModel(result: MethodChannel.Result) {
