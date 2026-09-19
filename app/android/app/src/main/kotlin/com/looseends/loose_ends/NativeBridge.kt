@@ -117,6 +117,16 @@ class NativeBridge private constructor() {
         return looseEndsSnoozeCommitment(handle, id)
     }
 
+    fun transcribeWav(wavPath: String, modelPath: String): String? {
+        if (wavPath.isBlank() || modelPath.isBlank()) return null
+        return try {
+            looseEndsTranscribeWav(wavPath, modelPath)
+        } catch (e: UnsatisfiedLinkError) {
+            android.util.Log.e("NativeBridge", "Whisper native method unavailable", e)
+            null
+        }
+    }
+
     companion object {
         init {
             try {
@@ -159,5 +169,9 @@ class NativeBridge private constructor() {
         ): Long
         @JvmStatic private external fun looseEndsResolveCommitment(handle: Long, id: Long, note: String?): Boolean
         @JvmStatic private external fun looseEndsSnoozeCommitment(handle: Long, id: Long): Boolean
+        @JvmStatic private external fun looseEndsTranscribeWav(
+            wavPath: String,
+            modelPath: String
+        ): String?
     }
 }
