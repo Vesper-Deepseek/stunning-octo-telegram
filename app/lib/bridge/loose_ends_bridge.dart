@@ -238,6 +238,84 @@ class LooseEndsBridge {
     }
   }
 
+  static Future<Map<String, dynamic>> voiceModelStatus() async {
+    if (!_initialized || !_channelAvailable) return const {};
+    try {
+      final result = await _channel.invokeMethod('voiceModelStatus');
+      return result is Map
+          ? result.map((key, value) => MapEntry(key.toString(), value))
+          : const {};
+    } on PlatformException {
+      return const {};
+    } on MissingPluginException {
+      return const {};
+    }
+  }
+
+  static Future<String?> downloadVoiceModel({bool allowMobile = false}) async {
+    if (!_initialized || !_channelAvailable) return 'Native voice model manager unavailable.';
+    try {
+      final result = await _channel.invokeMethod<Map>('startVoiceModelDownload', {
+        'allowMobile': allowMobile,
+      });
+      if (result == null) return 'Voice model download failed.';
+      return result['ok'] == true
+          ? null
+          : result['message']?.toString() ?? 'Voice model download failed.';
+    } on PlatformException catch (e) {
+      return e.message ?? 'Voice model download failed.';
+    } on MissingPluginException {
+      return 'Native voice model manager unavailable.';
+    }
+  }
+
+  static Future<void> cancelVoiceModelDownload() async {
+    if (!_initialized || !_channelAvailable) return;
+    try {
+      await _channel.invokeMethod('cancelVoiceModelDownload');
+    } on PlatformException {
+      // Native side removes the partial file.
+    } on MissingPluginException {
+      // Optional voice model support is unavailable on this platform.
+    }
+  }
+
+  static Future<bool> startVoiceRecording() async {
+    if (!_initialized || !_channelAvailable) return false;
+    try {
+      return await _channel.invokeMethod<bool>('startVoiceRecording') ?? false;
+    } on PlatformException catch (e) {
+      debugPrint('Voice recording failed: ${e.message}');
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  static Future<String?> stopVoiceRecording() async {
+    if (!_initialized || !_channelAvailable) return null;
+    try {
+      return await _channel.invokeMethod<String>('stopVoiceRecording');
+    } on PlatformException catch (e) {
+      debugPrint('Stopping voice recording failed: ${e.message}');
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
+  static Future<String?> transcribeVoice(String wavPath) async {
+    if (!_initialized || !_channelAvailable) return null;
+    try {
+      return await _channel.invokeMethod<String>('transcribeVoice', {'wavPath': wavPath});
+    } on PlatformException catch (e) {
+      debugPrint('Voice transcription failed: ${e.message}');
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
   static Future<String?> downloadModel(String modelId, {bool allowMobile = false}) async {
     if (!_initialized || !_channelAvailable) return 'Native model manager unavailable.';
     try {
