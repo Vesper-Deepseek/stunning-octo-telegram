@@ -68,8 +68,6 @@ class VoiceRecorder(private val outputDir: File) {
         } catch (_: IllegalStateException) {
             // The recorder may already have stopped because the device ended capture.
         }
-        recorder?.release()
-        recorder = null
 
         val thread = worker
         if (thread != null && thread !== Thread.currentThread()) {
@@ -79,6 +77,9 @@ class VoiceRecorder(private val outputDir: File) {
                 Thread.currentThread().interrupt()
             }
         }
+
+        recorder?.release()
+        recorder = null
         worker = null
 
         val result = currentFile
@@ -93,9 +94,18 @@ class VoiceRecorder(private val outputDir: File) {
             recorder?.stop()
         } catch (_: IllegalStateException) {
         }
+
+        val thread = worker
+        if (thread != null && thread !== Thread.currentThread()) {
+            try {
+                thread.join(1_000)
+            } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt()
+            }
+        }
+
         recorder?.release()
         recorder = null
-        worker?.interrupt()
         worker = null
         currentFile?.delete()
         currentFile = null
