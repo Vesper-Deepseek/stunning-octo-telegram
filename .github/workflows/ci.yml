@@ -122,6 +122,7 @@ jobs:
         run: git rm -r --cached --ignore-unmatch core/target app/native/target
 
       - name: Commit formatter and source fixes
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           if git diff --quiet; then
