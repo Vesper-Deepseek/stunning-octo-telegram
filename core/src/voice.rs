@@ -4,7 +4,7 @@
 //! format directly and also handles mono/stereo WAVs with other sample rates
 //! by downmixing and linearly resampling before Whisper inference.
 
-use std::path::Path;
+use std::{path::Path, sync::Arc};
 
 use whispercpp::{Context, ContextParams, Params, SamplingStrategy};
 
@@ -14,11 +14,13 @@ pub fn transcribe_wav<P: AsRef<Path>, M: AsRef<Path>>(
     model_path: M,
 ) -> Result<String, String> {
     let samples = read_wav_16k_mono(wav_path)?;
-    let context = Context::new(
-        model_path.as_ref(),
-        ContextParams::new().with_use_gpu(false),
-    )
-    .map_err(|e| format!("whisper model init: {e}"))?;
+    let context = Arc::new(
+        Context::new(
+            model_path.as_ref(),
+            ContextParams::new().with_use_gpu(false),
+        )
+        .map_err(|e| format!("whisper model init: {e}"))?,
+    );
 
     let mut state = context
         .create_state()
@@ -31,7 +33,7 @@ pub fn transcribe_wav<P: AsRef<Path>, M: AsRef<Path>>(
     params
         .set_n_threads(
             std::thread::available_parallelism()
-                .map(|n| n.get().min(4) as u32)
+                .map(|n| n.get().min(4) as i32)
                 .unwrap_or(2),
         )
         .set_no_context(true)
