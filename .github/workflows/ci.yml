@@ -224,6 +224,9 @@ jobs:
           yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
           "$SDKMANAGER" "platform-tools" "ndk;28.2.13676358"
 
+      - name: Set up Rust Android targets for Flutter build
+        run: rustup target add aarch64-linux-android
+
       - name: Build arm64 native libraries
         working-directory: app
         env:
