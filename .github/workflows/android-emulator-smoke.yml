@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  pull_request:
 
 permissions:
   contents: read
@@ -18,7 +19,7 @@ jobs:
     name: Install, launch, and exercise Android APK
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout current main
+      - name: Checkout source commit under test
         uses: actions/checkout@v6
 
       - name: Enable KVM
@@ -73,7 +74,7 @@ jobs:
           export CC_x86_64_linux_android="${TOOLCHAIN}/x86_64-linux-android${ANDROID_API}-clang"
           # The emulator runs x86_64, so the smoke-test APK only needs that ABI.
           cargo generate-lockfile --manifest-path native/Cargo.toml
-          cargo build --manifest-path native/Cargo.toml --release --target x86_64-linux-android --features jni,neural
+          cargo build --manifest-path native/Cargo.toml --release --target x86_64-linux-android --features jni,neural,voice
           mkdir -p android/app/src/main/jniLibs/x86_64
           cp native/target/x86_64-linux-android/release/libloose_ends_native.so \
             android/app/src/main/jniLibs/x86_64/libloose_ends_native.so
@@ -107,7 +108,7 @@ jobs:
             adb shell pm grant com.looseends.loose_ends android.permission.POST_NOTIFICATIONS || true
             adb shell am force-stop com.looseends.loose_ends
             adb logcat -c
-            adb shell am start -W -n com.looseends.loose_ends > artifacts/release_start.txt 2>&1
+            adb shell am start -W -n com.looseends.loose_ends/.MainActivity > artifacts/release_start.txt 2>&1
             sleep 8
             adb shell pidof com.looseends.loose_ends > artifacts/release_app_pid.txt 2>&1 || true
             adb shell dumpsys window windows > artifacts/release_windows.txt 2>&1 || true
@@ -131,7 +132,7 @@ jobs:
             adb shell pm grant com.looseends.loose_ends android.permission.POST_NOTIFICATIONS || true
             adb shell am force-stop com.looseends.loose_ends
             adb logcat -c
-            adb shell am start -W -n com.looseends.loose_ends > artifacts/final_release_start.txt 2>&1
+            adb shell am start -W -n com.looseends.loose_ends/.MainActivity > artifacts/final_release_start.txt 2>&1
             sleep 8
             adb shell pidof com.looseends.loose_ends > artifacts/final_release_pid.txt 2>&1
             adb exec-out screencap -p > artifacts/final_release.png 2> artifacts/final_screenshot-error.txt || true

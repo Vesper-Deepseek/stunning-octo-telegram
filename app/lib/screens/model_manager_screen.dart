@@ -12,6 +12,7 @@ class ModelManagerScreen extends StatefulWidget {
 class _ModelManagerScreenState extends State<ModelManagerScreen> {
   List<Map<String, dynamic>> _models = const [];
   Map<String, dynamic> _status = const {};
+  Map<String, dynamic> _voiceStatus = const {};
   StreamSubscription<Map<String, dynamic>>? _progressSub;
   Map<String, dynamic>? _progress;
   String? _error;
@@ -37,10 +38,12 @@ class _ModelManagerScreenState extends State<ModelManagerScreen> {
   Future<void> _load() async {
     final models = await LooseEndsBridge.modelCatalog();
     final status = await LooseEndsBridge.modelStatus();
+    final voiceStatus = await LooseEndsBridge.voiceModelStatus();
     if (!mounted) return;
     setState(() {
       _models = models;
       _status = status;
+      _voiceStatus = voiceStatus;
     });
   }
 
@@ -90,6 +93,72 @@ class _ModelManagerScreenState extends State<ModelManagerScreen> {
     await LooseEndsBridge.cancelModelDownload();
     if (!mounted) return;
     setState(() => _busy = false);
+    await _load();
+  }
+
+  Future<void> _downloadVoice() async {
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Download Whisper voice model?'),
+        content: const Text(
+          'This downloads the on-device Whisper tiny.en model from the fixed official source. '
+          'The file is SHA-256 checked before use and Wi-Fi is required by default.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Download'),
+          ),
+        ],
+      ),
+    );
+    if (accepted != true || !mounted) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+      _progress = null;
+    });
+    final error = await LooseEndsBridge.downloadVoiceModel(allowMobile: _allowMobile);
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _error = error;
+    });
+    await _load();
+  }
+
+  Future<void> _cancelVoice() async {
+    await LooseEndsBridge.cancelVoiceModelDownload();
+    if (!mounted) return;
+    setState(() => _busy = false);
+    await _load();
+  }
+
+  Future<void> _deleteVoice() async {
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Whisper voice model?'),
+        content: const Text('Voice transcription will ask you to download it again later.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (yes != true) return;
+    await LooseEndsBridge.cancelVoiceModelDownload();
     await _load();
   }
 
@@ -253,6 +322,72 @@ class _ModelManagerScreenState extends State<ModelManagerScreen> {
                 ),
               );
             }),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Builder(
+                  builder: (context) {
+                    final voiceDownloaded = _voiceStatus['downloaded'] == true;
+                    final voiceSelected = _voiceStatus['selected'] == true;
+                    final voiceActive =
+                        _progress?['modelId']?.toString() == 'whisper_tiny_en_q5_1' && _busy;
+                    final voicePercent =
+                        (_progress?['percent'] as num?)?.toDouble() ?? 0.0;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Voice transcription',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Whisper tiny.en runs locally on recorded audio. '
+                          'The recording is removed after transcription.',
+                        ),
+                        const SizedBox(height: 4),
+                        Text('${_bytes(_voiceStatus["sizeBytes"])} • SHA-256 verified before use'),
+                        if (voiceActive) ...[
+                          const SizedBox(height: 12),
+                          LinearProgressIndicator(value: voicePercent / 100),
+                          const SizedBox(height: 4),
+                          Text('${voicePercent.toStringAsFixed(1)}%'),
+                        ],
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            if (voiceActive)
+                              OutlinedButton(
+                                onPressed: _cancelVoice,
+                                child: const Text('Cancel'),
+                              )
+                            else if (voiceDownloaded)
+                              OutlinedButton(
+                                onPressed: null,
+                                child: Text(
+                                  voiceSelected ? 'Ready for Voice' : 'Available for Voice',
+                                ),
+                              )
+                            else
+                              FilledButton(
+                                onPressed: _busy ? null : _downloadVoice,
+                                child: const Text('Download'),
+                              ),
+                            if (voiceDownloaded)
+                              TextButton(
+                                onPressed: _busy ? null : _deleteVoice,
+                                child: const Text('Delete'),
+                              ),
+                          ],
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: _busy ? null : _import,

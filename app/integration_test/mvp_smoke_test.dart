@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -57,7 +58,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byType(TextField),
-      'I will pay Aisha 25 by 2030-01-02',
+      'I need to pay Aisha 25 by 2030-01-02',
     );
     await tester.tap(find.text('Extract'));
     await tester.pumpAndSettle(const Duration(seconds: 2));
@@ -103,7 +104,7 @@ void main() {
 
     await tester.tap(find.text('Capture'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'I will call Daniel tomorrow');
+    await tester.enterText(find.byType(TextField), 'I need to call Daniel tomorrow');
     await tester.tap(find.text('Extract'));
     await tester.pumpAndSettle(const Duration(seconds: 2));
     expect(find.textContaining('I will call Daniel'), findsOneWidget);

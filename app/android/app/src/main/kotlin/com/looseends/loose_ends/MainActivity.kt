@@ -19,9 +19,13 @@ class MainActivity : FlutterActivity() {
     private val progressChannelName = "com.looseends/model_progress"
     private val modelPickRequestCode = 4242
     private val customModelPickRequestCode = 4244
+    private val screenshotPickRequestCode = 4246
     private var pendingModelResult: MethodChannel.Result? = null
     private var pendingCustomModelResult: MethodChannel.Result? = null
+    private var pendingScreenshotResult: MethodChannel.Result? = null
     private var progressSink: EventChannel.EventSink? = null
+    private val offlineOcr by lazy { OfflineOcrEngine(applicationContext) }
+    private val voiceRecorder by lazy { VoiceRecorder(cacheDir) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,6 +66,7 @@ class MainActivity : FlutterActivity() {
                     val json = bridge.extractText(
                         text,
                         if (model?.isFile == true) model.absolutePath else null,
+                        call.argument<String>("sourceType") ?: "text",
                         today.year,
                         today.monthValue,
                         today.dayOfMonth
@@ -89,6 +94,43 @@ class MainActivity : FlutterActivity() {
                     ModelDownloadManager.cancelDownload()
                     result.success(true)
                 }
+                "ocrModelStatus" -> result.success(OcrModelManager.status(this))
+                "startOcrModelDownload" -> {
+                    val allowMobile = call.argument<Boolean>("allowMobile") ?: false
+                    OcrModelManager.downloadAll(
+                        context = this,
+                        allowMobile = allowMobile,
+                        onProgress = { progressSink?.success(it) },
+                        onFinished = { ok, message ->
+                            runOnUiThread { result.success(mapOf("ok" to ok, "message" to message)) }
+                        }
+                    )
+                }
+                "deleteOcrModels" -> result.success(OcrModelManager.deleteAll(this))
+                "pickScreenshot" -> pickScreenshot(result)
+                "voiceModelStatus" -> result.success(VoiceModelManager.status(this))
+                "startVoiceModelDownload" -> {
+                    val allowMobile = call.argument<Boolean>("allowMobile") ?: false
+                    VoiceModelManager.startDownload(
+                        context = this,
+                        allowMobile = allowMobile,
+                        onProgress = { progressSink?.success(it) },
+                        onFinished = { ok, message ->
+                            runOnUiThread { result.success(mapOf("ok" to ok, "message" to message)) }
+                        }
+                    )
+                }
+                "cancelVoiceModelDownload" -> {
+                    VoiceModelManager.cancelDownload()
+                    result.success(true)
+                }
+                "deleteVoiceModel" -> result.success(VoiceModelManager.deleteModel(this))
+                "startVoiceRecording" -> startVoiceRecording(result)
+                "stopVoiceRecording" -> {
+                    val file = voiceRecorder.stop()
+                    result.success(file?.absolutePath)
+                }
+                "transcribeVoice" -> transcribeVoice(call.argument<String>("wavPath"), result)
                 "deleteModel" -> {
                     val modelId = call.argument<String>("modelId")
                         ?: return@setMethodCallHandler result.error("bad_args", "modelId required", null)
@@ -188,6 +230,92 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    private fun startVoiceRecording(result: MethodChannel.Result) {
+        if (android.os.Build.VERSION.SDK_INT >= 23 &&
+            checkSelfPermission(Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 4245)
+            result.error("permission_required", "Microphone permission is required. Tap the record button again after granting it.", null)
+            return
+        }
+
+        Thread {
+            try {
+                voiceRecorder.start()
+                runOnUiThread { result.success(true) }
+            } catch (e: Exception) {
+                runOnUiThread { result.error("recording_failed", e.message, null) }
+            }
+        }.start()
+    }
+
+    private fun transcribeVoice(wavPath: String?, result: MethodChannel.Result) {
+        if (wavPath.isNullOrBlank()) {
+            result.error("bad_args", "wavPath required", null)
+            return
+        }
+        val wav = java.io.File(wavPath)
+        val model = VoiceModelManager.selectedModelFile(this)
+        if (!wav.isFile) {
+            result.error("recording_missing", "The recorded audio file is unavailable.", null)
+            return
+        }
+        if (model == null) {
+            wav.delete()
+            result.error("voice_model_missing", "Download the Whisper voice model before recording.", null)
+            return
+        }
+
+        Thread {
+            try {
+                val text = VoiceNative.transcribeWav(
+                    wav.absolutePath,
+                    model.absolutePath
+                )
+                wav.delete()
+                if (text == null) {
+                    runOnUiThread {
+                        result.error("transcription_failed", "Offline Whisper transcription failed.", null)
+                    }
+                } else {
+                    runOnUiThread { result.success(text) }
+                }
+            } catch (e: Exception) {
+                wav.delete()
+                runOnUiThread { result.error("transcription_failed", e.message, null) }
+            }
+        }.start()
+    }
+
+    override fun onDestroy() {
+        voiceRecorder.cancel()
+        offlineOcr.release()
+        super.onDestroy()
+    }
+
+    private fun pickScreenshot(result: MethodChannel.Result) {
+        if (pendingScreenshotResult != null) {
+            result.error("busy", "image picker already open", null)
+            return
+        }
+        if (!OcrModelManager.allReady(this)) {
+            result.error(
+                "ocr_models_missing",
+                "Download and verify the OCR models before selecting a screenshot.",
+                null,
+            )
+            return
+        }
+        pendingScreenshotResult = result
+        startActivityForResult(
+            Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "image/*"
+            },
+            screenshotPickRequestCode,
+        )
+    }
+
     private fun pickCustomModel(result: MethodChannel.Result) {
         if (pendingCustomModelResult != null) {
             result.error("busy", "model picker already open", null)
@@ -205,6 +333,31 @@ class MainActivity : FlutterActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (requestCode) {
+            screenshotPickRequestCode -> {
+                val result = pendingScreenshotResult
+                pendingScreenshotResult = null
+                if (result == null) return
+                val uri = data?.data
+                if (resultCode != Activity.RESULT_OK || uri == null) {
+                    result.success(null)
+                    return
+                }
+                Thread {
+                    val image = java.io.File.createTempFile("loose-ends-ocr-", ".image", cacheDir)
+                    try {
+                        contentResolver.openInputStream(uri).use { input ->
+                            if (input == null) throw IllegalStateException("Could not read the selected image.")
+                            java.io.FileOutputStream(image).use { output -> input.copyTo(output, 1024 * 1024) }
+                        }
+                        val text = offlineOcr.recognize(image)
+                        image.delete()
+                        runOnUiThread { result.success(text) }
+                    } catch (e: Exception) {
+                        image.delete()
+                        runOnUiThread { result.error("ocr_failed", e.message, null) }
+                    }
+                }.start()
+            }
             customModelPickRequestCode -> {
                 val result = pendingCustomModelResult
                 pendingCustomModelResult = null

@@ -27,9 +27,6 @@ class LooseEndsApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: showOnboarding ? const OnboardingScreen() : const HomeScreen(),
-      routes: {
-        '/': (_) => const HomeScreen(),
-      },
     );
   }
 }

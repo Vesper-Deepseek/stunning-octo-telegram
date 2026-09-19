@@ -1,13 +1,12 @@
-//! Offline voice transcription using whisper.cpp through whisper_cpp-rs.
+//! Offline voice transcription using whisper.cpp through the maintained whispercpp binding.
 //!
 //! Android records 16 kHz mono PCM16 WAV files. This module accepts that
 //! format directly and also handles mono/stereo WAVs with other sample rates
 //! by downmixing and linearly resampling before Whisper inference.
 
-use std::path::Path;
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 
-use whisper_cpp::{WhisperModel, WhisperParams, WhisperSampling};
+use whispercpp::{Context, ContextParams, Params, SamplingStrategy};
 
 /// Transcribe a local WAV file using a local Whisper GGML model.
 pub fn transcribe_wav<P: AsRef<Path>, M: AsRef<Path>>(
@@ -15,42 +14,59 @@ pub fn transcribe_wav<P: AsRef<Path>, M: AsRef<Path>>(
     model_path: M,
 ) -> Result<String, String> {
     let samples = read_wav_16k_mono(wav_path)?;
-    let model = WhisperModel::new_from_file(model_path, None)
-        .map_err(|e| format!("whisper model init: {e}"))?;
+    let context = Arc::new(
+        Context::new(
+            model_path.as_ref(),
+            ContextParams::new().with_use_gpu(false),
+        )
+        .map_err(|e| format!("whisper model init: {e}"))?,
+    );
 
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .map_err(|e| format!("voice runtime init: {e}"))?;
+    let mut state = context
+        .create_state()
+        .map_err(|e| format!("whisper state init: {e}"))?;
 
-    runtime.block_on(async move {
-        let mut session = model
-            .new_session()
-            .await
-            .map_err(|e| format!("whisper session init: {e}"))?;
+    let mut params = Params::new(SamplingStrategy::Greedy { best_of: 1 });
+    params
+        .set_language("auto")
+        .map_err(|e| format!("whisper language setup: {e}"))?;
+    params
+        .set_n_threads(
+            std::thread::available_parallelism()
+                .map(|n| n.get().min(4) as i32)
+                .unwrap_or(2),
+        )
+        .set_no_context(true)
+        .set_suppress_blank(true)
+        .set_suppress_nst(true)
+        .set_temperature(0.0)
+        .set_temperature_inc(0.0)
+        .set_no_speech_thold(0.6)
+        .silence_print_toggles();
 
-        let mut params = WhisperParams::new(WhisperSampling::default_greedy());
-        params.thread_count = std::thread::available_parallelism()
-            .map(Arc::new)
-            .map(|n| n.get().min(4) as u32)
-            .unwrap_or(2);
-        params.no_context = true;
-        params.no_timestamps = true;
-        params.print_realtime = false;
-        params.print_progress = false;
-        params.print_timestamps = false;
-        params.language = "auto".to_string();
+    state
+        .full(&params, &samples)
+        .map_err(|e| format!("whisper decode: {e}"))?;
 
-        session
-            .advance(params, &samples)
-            .await
-            .map_err(|e| format!("whisper decode: {e}"))?;
+    let mut transcript = String::new();
+    for i in 0..state.n_segments() {
+        let segment = state
+            .segment(i)
+            .ok_or_else(|| format!("whisper segment {i} unavailable"))?;
+        let text = segment
+            .text()
+            .map_err(|e| format!("whisper text: {e}"))?;
+        let text = text.trim();
+        if text.is_empty() {
+            continue;
+        }
+        if !transcript.is_empty() {
+            transcript.push('\n');
+        }
+        transcript.push_str(text);
+    }
 
-        session
-            .new_context()
-            .map(|text| text.trim().to_string())
-            .map_err(|e| format!("whisper text: {e}"))
-    })
+    Ok(transcript.trim().to_string())
 }
 
 fn read_wav_16k_mono<P: AsRef<Path>>(path: P) -> Result<Vec<f32>, String> {

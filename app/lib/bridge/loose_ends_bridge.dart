@@ -58,13 +58,19 @@ class LooseEndsBridge {
     );
   }
 
-  static Future<List<Draft>> ingestText(String text) async {
+  static Future<List<Draft>> ingestText(
+    String text, {
+    String sourceType = 'text',
+  }) async {
     if (!_initialized) return const [];
     if (Platform.isLinux && !_channelAvailable) {
       return LooseEndsBridgeLinux.ingestText(text).map(_draftFromMap).toList();
     }
     try {
-      final result = await _channel.invokeMethod('ingestText', {'text': text});
+      final result = await _channel.invokeMethod('ingestText', {
+        'text': text,
+        'sourceType': sourceType,
+      });
       final list = result is List ? result : const [];
       return list.cast<Map>().map(_draftFromMap).toList();
     } on PlatformException catch (e) {
@@ -235,6 +241,149 @@ class LooseEndsBridge {
       return const {};
     } on MissingPluginException {
       return const {};
+    }
+  }
+
+  static Future<Map<String, dynamic>> ocrModelStatus() async {
+    if (!_initialized || !_channelAvailable) return const {};
+    try {
+      final result = await _channel.invokeMethod('ocrModelStatus');
+      return result is Map
+          ? result.map((key, value) => MapEntry(key.toString(), value))
+          : const {};
+    } on PlatformException {
+      return const {};
+    } on MissingPluginException {
+      return const {};
+    }
+  }
+
+  static Future<String?> downloadOcrModels({bool allowMobile = false}) async {
+    if (!_initialized || !_channelAvailable) return 'Native OCR model manager unavailable.';
+    try {
+      final result = await _channel.invokeMethod<Map>('startOcrModelDownload', {
+        'allowMobile': allowMobile,
+      });
+      if (result == null) return 'OCR model download failed.';
+      return result['ok'] == true
+          ? null
+          : result['message']?.toString() ?? 'OCR model download failed.';
+    } on PlatformException catch (e) {
+      return e.message ?? 'OCR model download failed.';
+    } on MissingPluginException {
+      return 'Native OCR model manager unavailable.';
+    }
+  }
+
+  static Future<bool> deleteOcrModels() async {
+    if (!_initialized || !_channelAvailable) return false;
+    try {
+      return await _channel.invokeMethod<bool>('deleteOcrModels') ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  static Future<String?> pickScreenshotAndExtract() async {
+    if (!_initialized || !_channelAvailable) return null;
+    try {
+      return await _channel.invokeMethod<String>('pickScreenshot');
+    } on PlatformException catch (e) {
+      debugPrint('Screenshot OCR failed: ${e.message}');
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>> voiceModelStatus() async {
+    if (!_initialized || !_channelAvailable) return const {};
+    try {
+      final result = await _channel.invokeMethod('voiceModelStatus');
+      return result is Map
+          ? result.map((key, value) => MapEntry(key.toString(), value))
+          : const {};
+    } on PlatformException {
+      return const {};
+    } on MissingPluginException {
+      return const {};
+    }
+  }
+
+  static Future<String?> downloadVoiceModel({bool allowMobile = false}) async {
+    if (!_initialized || !_channelAvailable) return 'Native voice model manager unavailable.';
+    try {
+      final result = await _channel.invokeMethod<Map>('startVoiceModelDownload', {
+        'allowMobile': allowMobile,
+      });
+      if (result == null) return 'Voice model download failed.';
+      return result['ok'] == true
+          ? null
+          : result['message']?.toString() ?? 'Voice model download failed.';
+    } on PlatformException catch (e) {
+      return e.message ?? 'Voice model download failed.';
+    } on MissingPluginException {
+      return 'Native voice model manager unavailable.';
+    }
+  }
+
+  static Future<void> cancelVoiceModelDownload() async {
+    if (!_initialized || !_channelAvailable) return;
+    try {
+      await _channel.invokeMethod('cancelVoiceModelDownload');
+    } on PlatformException {
+      // Native side removes the partial file.
+    } on MissingPluginException {
+      // Optional voice model support is unavailable on this platform.
+    }
+  }
+
+  static Future<bool> deleteVoiceModel() async {
+    if (!_initialized || !_channelAvailable) return false;
+    try {
+      return await _channel.invokeMethod<bool>('deleteVoiceModel') ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  static Future<bool> startVoiceRecording() async {
+    if (!_initialized || !_channelAvailable) return false;
+    try {
+      return await _channel.invokeMethod<bool>('startVoiceRecording') ?? false;
+    } on PlatformException catch (e) {
+      debugPrint('Voice recording failed: ${e.message}');
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  static Future<String?> stopVoiceRecording() async {
+    if (!_initialized || !_channelAvailable) return null;
+    try {
+      return await _channel.invokeMethod<String>('stopVoiceRecording');
+    } on PlatformException catch (e) {
+      debugPrint('Stopping voice recording failed: ${e.message}');
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
+  static Future<String?> transcribeVoice(String wavPath) async {
+    if (!_initialized || !_channelAvailable) return null;
+    try {
+      return await _channel.invokeMethod<String>('transcribeVoice', {'wavPath': wavPath});
+    } on PlatformException catch (e) {
+      debugPrint('Voice transcription failed: ${e.message}');
+      return null;
+    } on MissingPluginException {
+      return null;
     }
   }
 

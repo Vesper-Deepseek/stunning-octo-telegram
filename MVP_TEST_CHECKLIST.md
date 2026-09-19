@@ -9,7 +9,7 @@ Status is updated from GitHub CI/emulator evidence. A feature is only marked PAS
 | 1 | Rust core unit tests | PASS (previous run) | CI Rust job completed successfully on the prior main revision |
 | 2 | Rust Clippy / formatting | PASS (previous run) | CI Rust job completed successfully |
 | 3 | Flutter analyze | PASS (previous run) | CI Flutter Analyze completed successfully |
-| 4 | Flutter widget test suite | RETEST | Current work is fixing the launch assertion and Android Kotlin build blocker |
+| 4 | Flutter widget test suite | RETEST | New capture/media UI is included; awaiting fresh CI result |
 | 5 | Android x86_64 native Rust build | RETEST | Smoke workflow now targets emulator ABI |
 | 6 | Android release APK build | RETEST | Smoke workflow builds and installs the release artifact |
 
@@ -53,13 +53,13 @@ Status is updated from GitHub CI/emulator evidence. A feature is only marked PAS
 
 | # | Check | Status |
 |---|---|---|
-| 33 | Screenshot capture -> offline OCR -> Capture text | NOT COMPLETE |
-| 34 | Voice recording -> local Whisper transcription -> Capture text | NOT COMPLETE |
-| 35 | Flutter production path uses flutter_rust_bridge as the primary boundary | PARTIAL |
+| 33 | Screenshot capture -> offline OCR -> Capture text | CODE COMPLETE; RETEST | PP-OCRv5 ONNX path implemented; emulator execution still pending |
+| 34 | Voice recording -> local Whisper transcription -> Capture text | CODE COMPLETE; RETEST | Local WAV recorder + whispercpp path implemented; emulator execution still pending |
+| 35 | Flutter production path uses flutter_rust_bridge as the primary boundary | PARTIAL | Existing Android production path remains MethodChannel/JNI |
 | 36 | No commitment data leaves the device under an instrumented network test | PARTIAL: offline capture test + code audit; packet-level proof pending |
-| 37 | OCR model licensing is compatible with the project's MIT/Apache-only redistribution rule | OPEN |
+| 37 | New OCR/Whisper model/runtime licensing uses MIT/Apache-only components | CODE VERIFIED | OCR models Apache-2.0; ONNX Runtime MIT; OpenCV Apache-2.0; whispercpp MIT/Apache-2.0 |
 | 38 | Full universal release APK contains arm64-v8a, armeabi-v7a, and x86_64 native libraries | RETEST |
 
 ## Current score
 
-Before the current emulator run, 5 of 38 checks have direct PASS/CODE-VERIFIED evidence and the remaining items are deliberately marked RETEST/OPEN/NOT COMPLETE rather than assumed.
+The media features are implemented in source. Emulator execution, packet-level egress proof, and the full universal release remain intentionally RETEST/pending until their CI evidence exists.

@@ -17,11 +17,11 @@ jni-sys = { version = "0.4", optional = true }
 [features]
 jni = ["jni-sys"]
 neural = ["loose-ends-core/neural"]
+voice = ["loose-ends-core/voice"]
 frb = ["flutter_rust_bridge"]
 frb-neural = ["frb", "loose-ends-core/neural"]
-voice = ["loose-ends-core/voice"]
 ocr = ["loose-ends-core/ocr"]
-multimodal = ["voice", "ocr"]
+multimodal = ["ocr", "voice"]
 
 [profile.release]
 opt-level = "z"
