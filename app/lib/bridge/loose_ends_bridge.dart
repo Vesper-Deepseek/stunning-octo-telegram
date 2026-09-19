@@ -280,6 +280,17 @@ class LooseEndsBridge {
     }
   }
 
+  static Future<bool> deleteVoiceModel() async {
+    if (!_initialized || !_channelAvailable) return false;
+    try {
+      return await _channel.invokeMethod<bool>('deleteVoiceModel') ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
   static Future<bool> startVoiceRecording() async {
     if (!_initialized || !_channelAvailable) return false;
     try {
