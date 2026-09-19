@@ -82,7 +82,7 @@ jobs:
 
       - name: Resolve native neural dependency lockfile
         working-directory: app/native
-        run: cargo check --features jni,neural,voice
+        run: cargo check --features jni,neural
 
       - name: Apply native bridge Clippy fixes
         working-directory: app/native
@@ -156,7 +156,7 @@ jobs:
 
       - name: Check native bridge with neural JNI feature
         working-directory: app/native
-        run: cargo check --locked --features jni,neural,voice
+        run: cargo check --locked --features jni,neural
 
       - name: Clippy native bridge with JNI feature
         working-directory: app/native
@@ -164,7 +164,20 @@ jobs:
 
       - name: Clippy native bridge with neural JNI feature
         working-directory: app/native
-        run: cargo clippy --locked --features jni,neural,voice -- -D warnings
+        run: cargo clippy --locked --features jni,neural -- -D warnings
+
+      - name: Generate voice native lockfile
+        working-directory: app/voice-native
+        run: cargo generate-lockfile
+
+      - name: Check isolated voice native bridge
+        working-directory: app/voice-native
+        run: cargo check --locked
+
+      - name: Clippy isolated voice native bridge
+        working-directory: app/voice-native
+        run: cargo clippy --locked -- -D warnings
+
 
   flutter:
     name: Flutter analyze, tests, Android release build
@@ -204,6 +217,31 @@ jobs:
       - name: Tests
         working-directory: app
         run: flutter test
+
+      - name: Set up Android SDK and NDK
+        run: |
+          SDKMANAGER="$(find "${ANDROID_HOME}/cmdline-tools" -type f -path '*/bin/sdkmanager' | head -n 1)"
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+          "$SDKMANAGER" "platform-tools" "ndk;28.2.13676358"
+
+      - name: Build arm64 native libraries
+        working-directory: app
+        env:
+          NDK_VERSION: 28.2.13676358
+          ANDROID_API: 24
+        run: |
+          TOOLCHAIN="${ANDROID_HOME}/ndk/${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          export AR_aarch64_linux_android="${TOOLCHAIN}/llvm-ar"
+          export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER="${TOOLCHAIN}/aarch64-linux-android${ANDROID_API}-clang"
+          export CC_aarch64_linux_android="${TOOLCHAIN}/aarch64-linux-android${ANDROID_API}-clang"
+          export CXX_aarch64_linux_android="${TOOLCHAIN}/aarch64-linux-android${ANDROID_API}-clang++"
+          export CARGO_CFG_TARGET_FEATURE=""
+          cargo build --manifest-path native/Cargo.toml --release --target aarch64-linux-android --features jni,neural
+          cargo generate-lockfile --manifest-path voice-native/Cargo.toml
+          cargo build --manifest-path voice-native/Cargo.toml --release --target aarch64-linux-android
+          mkdir -p android/app/src/main/jniLibs/arm64-v8a
+          cp native/target/aarch64-linux-android/release/libloose_ends_native.so android/app/src/main/jniLibs/arm64-v8a/
+          cp voice-native/target/aarch64-linux-android/release/libloose_ends_voice_native.so android/app/src/main/jniLibs/arm64-v8a/libloose_ends_voice.so
 
       - name: Build arm64 release APK
         working-directory: app
