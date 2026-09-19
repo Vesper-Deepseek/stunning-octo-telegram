@@ -26,13 +26,12 @@ class _CaptureScreenState extends State<CaptureScreen> {
   void initState() {
     super.initState();
     _progressSub = LooseEndsBridge.modelProgress.listen((event) {
-      if (!mounted || event['modelId']?.toString() != 'whisper_tiny_en_q5_1') return;
+      if (!mounted) return;
       final percent = (event['percent'] as num?)?.toDouble();
       if (event['modelId']?.toString() == 'whisper_tiny_en_q5_1') {
         setState(() => _voiceProgress = percent);
-      }
-      if (event['assetId'] != null) {
-        setState(() => _ocrProgress = percent); 
+      } else if (event['assetId'] != null) {
+        setState(() => _ocrProgress = percent);
       }
     });
   }
