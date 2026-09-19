@@ -66,6 +66,7 @@ class MainActivity : FlutterActivity() {
                     val json = bridge.extractText(
                         text,
                         if (model?.isFile == true) model.absolutePath else null,
+                        call.argument<String>("sourceType") ?: "text",
                         today.year,
                         today.monthValue,
                         today.dayOfMonth
