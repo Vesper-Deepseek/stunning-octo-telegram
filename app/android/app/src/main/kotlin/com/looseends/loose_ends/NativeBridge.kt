@@ -30,6 +30,7 @@ class NativeBridge private constructor() {
     fun extractText(
         text: String,
         modelPath: String?,
+        sourceType: String,
         year: Int,
         month: Int,
         day: Int
@@ -150,7 +151,8 @@ class NativeBridge private constructor() {
 
         @JvmStatic private external fun looseEndsOpen(path: String): Long
         @JvmStatic private external fun looseEndsExtractText(
-            handle: Long, text: String, modelPath: String, year: Int, month: Int, day: Int
+            handle: Long, text: String, modelPath: String, sourceType: String,
+            year: Int, month: Int, day: Int
         ): String?
         @JvmStatic private external fun looseEndsIngestRules(
             handle: Long, text: String, year: Int, month: Int, day: Int
