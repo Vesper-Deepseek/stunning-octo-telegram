@@ -18,6 +18,9 @@ class _CaptureScreenState extends State<CaptureScreen> {
   bool _voiceBusy = false;
   double? _voiceProgress;
   String? _voiceMessage;
+  bool _ocrBusy = false;
+  double? _ocrProgress;
+  String? _ocrMessage;
 
   @override
   void initState() {
@@ -25,7 +28,12 @@ class _CaptureScreenState extends State<CaptureScreen> {
     _progressSub = LooseEndsBridge.modelProgress.listen((event) {
       if (!mounted || event['modelId']?.toString() != 'whisper_tiny_en_q5_1') return;
       final percent = (event['percent'] as num?)?.toDouble();
-      setState(() => _voiceProgress = percent);
+      if (event['modelId']?.toString() == 'whisper_tiny_en_q5_1') {
+        setState(() => _voiceProgress = percent);
+      }
+      if (event['assetId'] != null) {
+        setState(() => _ocrProgress = percent); 
+      }
     });
   }
 
@@ -112,6 +120,84 @@ class _CaptureScreenState extends State<CaptureScreen> {
       return false;
     }
     return true;
+  }
+
+  Future<bool> _ensureOcrModels() async {
+    var status = await LooseEndsBridge.ocrModelStatus();
+    if (status['ready'] == true) return true;
+    if (!mounted) return false;
+
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Download OCR models?'),
+        content: const Text(
+          'Loose Ends uses on-device OCR for screenshots. The OCR models are downloaded only '
+          'after you approve it, from a fixed Apache-2.0 model source, and every file is '
+          'SHA-256 checked before use. Wi-Fi is required by default.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Download'),
+          ),
+        ],
+      ),
+    );
+    if (accepted != true || !mounted) return false;
+
+    setState(() {
+      _ocrBusy = true;
+      _ocrProgress = 0;
+      _ocrMessage = null;
+    });
+    final error = await LooseEndsBridge.downloadOcrModels();
+    if (!mounted) return false;
+    status = await LooseEndsBridge.ocrModelStatus();
+    setState(() {
+      _ocrBusy = false;
+      _ocrMessage = error;
+      _ocrProgress = error == null && status['ready'] == true ? 100 : _ocrProgress;
+    });
+    if (error != null || status['ready'] != true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error ?? 'OCR models are not ready.')),
+      );
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _pickScreenshot() async {
+    if (_busy || _voiceBusy || _ocrBusy) return;
+    final ready = await _ensureOcrModels();
+    if (!ready || !mounted) return;
+
+    setState(() {
+      _ocrBusy = true;
+      _ocrMessage = null;
+    });
+    try {
+      final text = await LooseEndsBridge.pickScreenshotAndExtract();
+      if (!mounted) return;
+      if (text == null || text.trim().isEmpty) {
+        setState(() => _ocrMessage = 'No readable text was found in that image.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No readable text found.')),
+        );
+        return;
+      }
+      _controller.text = text.trim();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Screenshot text extracted locally.')),
+      );
+    } finally {
+      if (mounted) setState(() => _ocrBusy = false);
+    }
   }
 
   Future<void> _toggleVoice() async {
@@ -202,7 +288,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: _busy ? null : _toggleVoice,
+                    onPressed: _busy || _ocrBusy ? null : _toggleVoice,
                     icon: Icon(_recording ? Icons.stop : Icons.mic),
                     label: Text(
                       _recording
@@ -213,6 +299,31 @@ class _CaptureScreenState extends State<CaptureScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: _busy || _voiceBusy ? null : _pickScreenshot,
+              icon: const Icon(Icons.image_search),
+              label: Text(_ocrBusy ? 'Reading screenshot…' : 'Screenshot → OCR'),
+            ),
+            if (_ocrBusy && (_ocrProgress ?? 0) > 0) ...[
+              const SizedBox(height: 8),
+              LinearProgressIndicator(value: (_ocrProgress ?? 0) / 100),
+              const SizedBox(height: 4),
+              Text(
+                'OCR models: ${(_ocrProgress ?? 0).toStringAsFixed(0)}%',
+                style: const TextStyle(fontSize: 12),
+              ),
+            ],
+            if (_ocrMessage != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _ocrMessage!,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontSize: 12,
+                ),
+              ),
+            ],
             if (voiceDownloading) ...[
               const SizedBox(height: 12),
               LinearProgressIndicator(
