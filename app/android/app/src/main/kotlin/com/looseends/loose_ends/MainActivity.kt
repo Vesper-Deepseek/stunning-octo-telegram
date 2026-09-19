@@ -106,6 +106,7 @@ class MainActivity : FlutterActivity() {
                     VoiceModelManager.cancelDownload()
                     result.success(true)
                 }
+                "deleteVoiceModel" -> result.success(VoiceModelManager.deleteModel(this))
                 "startVoiceRecording" -> startVoiceRecording(result)
                 "stopVoiceRecording" -> {
                     val file = voiceRecorder.stop()
