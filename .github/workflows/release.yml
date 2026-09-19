@@ -76,7 +76,9 @@ jobs:
 
           for target in aarch64-linux-android armv7-linux-androideabi x86_64-linux-android; do
             cargo generate-lockfile --manifest-path native/Cargo.toml
-            cargo build --manifest-path native/Cargo.toml --release --target "${target}" --features jni,neural,voice
+            cargo build --manifest-path native/Cargo.toml --release --target "${target}" --features jni,neural
+            cargo generate-lockfile --manifest-path voice-native/Cargo.toml
+            cargo build --manifest-path voice-native/Cargo.toml --release --target "${target}"
           done
 
           mkdir -p android/app/src/main/jniLibs/arm64-v8a
@@ -85,6 +87,9 @@ jobs:
           cp native/target/aarch64-linux-android/release/libloose_ends_native.so             android/app/src/main/jniLibs/arm64-v8a/libloose_ends_native.so
           cp native/target/armv7-linux-androideabi/release/libloose_ends_native.so             android/app/src/main/jniLibs/armeabi-v7a/libloose_ends_native.so
           cp native/target/x86_64-linux-android/release/libloose_ends_native.so             android/app/src/main/jniLibs/x86_64/libloose_ends_native.so
+          cp voice-native/target/aarch64-linux-android/release/libloose_ends_voice_native.so android/app/src/main/jniLibs/arm64-v8a/libloose_ends_voice.so
+          cp voice-native/target/armv7-linux-androideabi/release/libloose_ends_voice_native.so android/app/src/main/jniLibs/armeabi-v7a/libloose_ends_voice.so
+          cp voice-native/target/x86_64-linux-android/release/libloose_ends_voice_native.so android/app/src/main/jniLibs/x86_64/libloose_ends_voice.so
 
       - name: Build universal release APK
         working-directory: app
@@ -101,6 +106,9 @@ jobs:
           unzip -l "$APK" | grep -F "lib/arm64-v8a/libloose_ends_native.so"
           unzip -l "$APK" | grep -F "lib/armeabi-v7a/libloose_ends_native.so"
           unzip -l "$APK" | grep -F "lib/x86_64/libloose_ends_native.so"
+          unzip -l "$APK" | grep -F "lib/arm64-v8a/libloose_ends_voice.so"
+          unzip -l "$APK" | grep -F "lib/armeabi-v7a/libloose_ends_voice.so"
+          unzip -l "$APK" | grep -F "lib/x86_64/libloose_ends_voice.so"
           test -s "$APK"
           if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
             gh release upload "$TAG" "$APK" \
