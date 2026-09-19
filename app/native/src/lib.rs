@@ -63,18 +63,23 @@ mod jni_bridge {
         store_ptr: jlong,
         text: jstring,
         model_path: jstring,
+        source_type: jstring,
         year: jint,
         month: jint,
         day: jint,
     ) -> jstring {
         let text_str = jstring_to_optional_string(env, text).unwrap_or_default();
         let model_str = jstring_to_optional_string(env, model_path).unwrap_or_default();
+        let source_str =
+            jstring_to_optional_string(env, source_type).unwrap_or_else(|| "text".to_string());
         let text_c = CString::new(text_str).unwrap_or_default();
         let model_c = CString::new(model_str).unwrap_or_default();
+        let source_c = CString::new(source_str).unwrap_or_default();
         let out = super::loose_ends_extract_text(
             store_ptr as *mut _,
             text_c.as_ptr(),
             model_c.as_ptr(),
+            source_c.as_ptr(),
             year,
             month as u32,
             day as u32,
@@ -316,9 +321,10 @@ mod jni_bridge {
             #[cfg(feature = "neural")]
             JNINativeMethod {
                 name: c"looseEndsExtractText".as_ptr().cast_mut(),
-                signature: c"(JLjava/lang/String;Ljava/lang/String;III)Ljava/lang/String;"
-                    .as_ptr()
-                    .cast_mut(),
+                signature:
+                    c"(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;III)Ljava/lang/String;"
+                        .as_ptr()
+                        .cast_mut(),
                 fnPtr: native_loose_ends_extract_text as *mut c_void,
             },
             JNINativeMethod {
@@ -791,6 +797,7 @@ pub unsafe extern "C" fn loose_ends_extract_text(
     handle: *mut StoreHandle,
     text: *const c_char,
     model_path: *const c_char,
+    raw_input_type: *const c_char,
     today_year: i32,
     today_month: u32,
     today_day: u32,
@@ -805,6 +812,11 @@ pub unsafe extern "C" fn loose_ends_extract_text(
         None => return ptr::null_mut(),
     };
     let model_path = cstr_to_owned(model_path).unwrap_or_default();
+    let raw_input_type = match cstr_to_owned(raw_input_type).as_deref() {
+        Some("screenshot") => models::RawInputType::Screenshot,
+        Some("voice") => models::RawInputType::Voice,
+        _ => models::RawInputType::Text,
+    };
     let (candidates, provenance_path) =
         if !model_path.trim().is_empty() && std::path::Path::new(&model_path).is_file() {
             handle
@@ -826,7 +838,7 @@ pub unsafe extern "C" fn loose_ends_extract_text(
             )
         };
 
-    let src = match handle.store.add_entry_source(models::RawInputType::Text) {
+    let src = match handle.store.add_entry_source(raw_input_type) {
         Ok(id) => id,
         Err(_) => return ptr::null_mut(),
     };
