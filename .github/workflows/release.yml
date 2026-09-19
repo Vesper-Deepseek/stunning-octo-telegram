@@ -76,7 +76,9 @@ jobs:
 
           for target in aarch64-linux-android armv7-linux-androideabi x86_64-linux-android; do
             cargo generate-lockfile --manifest-path native/Cargo.toml
-            cargo build --manifest-path native/Cargo.toml --release --target "${target}" --features jni,neural,voice
+            cargo build --manifest-path native/Cargo.toml --release --target "${target}" --features jni,neural
+            cargo generate-lockfile --manifest-path voice-native/Cargo.toml
+            cargo build --manifest-path voice-native/Cargo.toml --release --target "${target}"
           done
 
           mkdir -p android/app/src/main/jniLibs/arm64-v8a
@@ -85,10 +87,77 @@ jobs:
           cp native/target/aarch64-linux-android/release/libloose_ends_native.so             android/app/src/main/jniLibs/arm64-v8a/libloose_ends_native.so
           cp native/target/armv7-linux-androideabi/release/libloose_ends_native.so             android/app/src/main/jniLibs/armeabi-v7a/libloose_ends_native.so
           cp native/target/x86_64-linux-android/release/libloose_ends_native.so             android/app/src/main/jniLibs/x86_64/libloose_ends_native.so
+          cp voice-native/target/aarch64-linux-android/release/libloose_ends_voice_native.so android/app/src/main/jniLibs/arm64-v8a/libloose_ends_voice.so
+          cp voice-native/target/armv7-linux-androideabi/release/libloose_ends_voice_native.so android/app/src/main/jniLibs/armeabi-v7a/libloose_ends_voice.so
+          cp voice-native/target/x86_64-linux-android/release/libloose_ends_voice_native.so android/app/src/main/jniLibs/x86_64/libloose_ends_voice.so
 
       - name: Build universal release APK
         working-directory: app
         run: flutter build apk --release
+
+      - name: Run universal release APK on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_2
+          cores: 2
+          ram-size: 4096M
+          disk-size: 8G
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            adb wait-for-device
+            adb install -r app/build/app/outputs/flutter-apk/app-release.apk
+            adb shell pm grant com.looseends.loose_ends android.permission.POST_NOTIFICATIONS || true
+            adb shell am force-stop com.looseends.loose_ends
+            adb logcat -c
+            adb shell am start -W -n com.looseends.loose_ends/.MainActivity
+            sleep 8
+            adb shell pidof com.looseends.loose_ends > release_app_pid.txt 2>&1
+            adb shell uiautomator dump /sdcard/window.xml > release_uiautomator.txt 2>&1 || true
+            adb pull /sdcard/window.xml release_window.xml > release_uiautomator_pull.txt 2>&1 || true
+            adb exec-out screencap -p > release_startup.png 2> release_screenshot_error.txt || true
+            adb logcat -d -v threadtime > release_launch_logcat.txt
+            test -s release_app_pid.txt && grep -Eq '^[0-9]+'
+            ! grep -Eq 'FATAL EXCEPTION|Process: com\\.looseends\\.loose_ends|UnsatisfiedLinkError|NoClassDefFoundError|SIGSEGV|SIGABRT' release_launch_logcat.txt
+
+            adb shell svc wifi disable || true
+            adb shell svc data disable || true
+            flutter test integration_test/mvp_smoke_test.dart -d "$ANDROID_SERIAL" --timeout 5m
+
+            adb shell svc wifi enable || true
+            adb shell am force-stop com.looseends.loose_ends
+            adb logcat -c
+            adb shell am start -W -n com.looseends.loose_ends/.MainActivity
+            sleep 5
+            adb shell pidof com.looseends.loose_ends > final_release_pid.txt 2>&1
+            adb exec-out screencap -p > final_release.png 2> final_screenshot_error.txt || true
+            adb logcat -d -v threadtime > final_release_logcat.txt
+            test -s final_release_pid.txt && grep -Eq '^[0-9]+'
+            ! grep -Eq 'FATAL EXCEPTION|Process: com\\.looseends\\.loose_ends|UnsatisfiedLinkError|NoClassDefFoundError|SIGSEGV|SIGABRT' final_release_logcat.txt
+
+      - name: Upload release emulator diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loose-ends-release-emulator
+          path: |
+            release_app_pid.txt
+            release_uiautomator.txt
+            release_window.xml
+            release_uiautomator_pull.txt
+            release_startup.png
+            release_screenshot_error.txt
+            release_launch_logcat.txt
+            final_release_pid.txt
+            final_release.png
+            final_screenshot_error.txt
+            final_release_logcat.txt
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Create GitHub release and upload APK
         env:
@@ -101,6 +170,9 @@ jobs:
           unzip -l "$APK" | grep -F "lib/arm64-v8a/libloose_ends_native.so"
           unzip -l "$APK" | grep -F "lib/armeabi-v7a/libloose_ends_native.so"
           unzip -l "$APK" | grep -F "lib/x86_64/libloose_ends_native.so"
+          unzip -l "$APK" | grep -F "lib/arm64-v8a/libloose_ends_voice.so"
+          unzip -l "$APK" | grep -F "lib/armeabi-v7a/libloose_ends_voice.so"
+          unzip -l "$APK" | grep -F "lib/x86_64/libloose_ends_voice.so"
           test -s "$APK"
           if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
             gh release upload "$TAG" "$APK" \
