@@ -21,6 +21,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
   bool _ocrBusy = false;
   double? _ocrProgress;
   String? _ocrMessage;
+  String _sourceType = 'text';
 
   @override
   void initState() {
@@ -49,7 +50,10 @@ class _CaptureScreenState extends State<CaptureScreen> {
 
     setState(() => _busy = true);
     try {
-      final drafts = await LooseEndsBridge.ingestText(text);
+      final drafts = await LooseEndsBridge.ingestText(
+        text,
+        sourceType: _sourceType,
+      );
       if (!mounted) return;
 
       if (drafts.isEmpty) {
@@ -193,6 +197,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
         return;
       }
       _controller.text = text.trim();
+      _sourceType = 'screenshot';
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Screenshot text extracted locally.')),
       );
@@ -246,6 +251,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
             : null;
         if (transcript != null && transcript.trim().isNotEmpty) {
           _controller.text = transcript.trim();
+          _sourceType = 'voice';
         }
       });
       if (transcript == null || transcript.trim().isEmpty) {
