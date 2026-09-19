@@ -268,7 +268,7 @@ class MainActivity : FlutterActivity() {
 
         Thread {
             try {
-                val text = NativeBridge.getInstance().transcribeWav(
+                val text = VoiceNative.transcribeWav(
                     wav.absolutePath,
                     model.absolutePath
                 )
