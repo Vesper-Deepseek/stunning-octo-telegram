@@ -82,7 +82,7 @@ jobs:
 
       - name: Resolve native neural dependency lockfile
         working-directory: app/native
-        run: cargo check --features jni,neural
+        run: cargo check --features jni,neural,voice
 
       - name: Apply native bridge Clippy fixes
         working-directory: app/native
@@ -155,7 +155,7 @@ jobs:
 
       - name: Check native bridge with neural JNI feature
         working-directory: app/native
-        run: cargo check --locked --features jni,neural
+        run: cargo check --locked --features jni,neural,voice
 
       - name: Clippy native bridge with JNI feature
         working-directory: app/native
@@ -163,7 +163,7 @@ jobs:
 
       - name: Clippy native bridge with neural JNI feature
         working-directory: app/native
-        run: cargo clippy --locked --features jni,neural -- -D warnings
+        run: cargo clippy --locked --features jni,neural,voice -- -D warnings
 
   flutter:
     name: Flutter analyze, tests, Android release build
