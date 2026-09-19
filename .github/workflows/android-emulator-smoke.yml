@@ -71,6 +71,7 @@ jobs:
           export CXX_x86_64_linux_android="${TOOLCHAIN}/x86_64-linux-android${ANDROID_API}-clang++"
           # llama-cpp-sys-2 expects this Cargo build-script variable even when Cargo omits it for Android targets.
           export CARGO_CFG_TARGET_FEATURE=""
+          export BINDGEN_EXTRA_CLANG_ARGS="--sysroot=${ANDROID_HOME}/ndk/${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/sysroot --target=x86_64-linux-android${ANDROID_API}"
           export CC_x86_64_linux_android="${TOOLCHAIN}/x86_64-linux-android${ANDROID_API}-clang"
           # The emulator runs x86_64, so the smoke-test APK only needs that ABI.
           cargo generate-lockfile --manifest-path native/Cargo.toml
