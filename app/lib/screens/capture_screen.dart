@@ -107,6 +107,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
     if (!mounted) return false;
 
     status = await LooseEndsBridge.voiceModelStatus();
+    if (!mounted) return false;
     setState(() {
       _voiceBusy = false;
       _voiceMessage = error;
@@ -157,6 +158,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
     final error = await LooseEndsBridge.downloadOcrModels();
     if (!mounted) return false;
     status = await LooseEndsBridge.ocrModelStatus();
+    if (!mounted) return false;
     setState(() {
       _ocrBusy = false;
       _ocrMessage = error;
