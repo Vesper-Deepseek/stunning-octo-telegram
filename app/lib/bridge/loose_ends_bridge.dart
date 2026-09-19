@@ -58,13 +58,19 @@ class LooseEndsBridge {
     );
   }
 
-  static Future<List<Draft>> ingestText(String text) async {
+  static Future<List<Draft>> ingestText(
+    String text, {
+    String sourceType = 'text',
+  }) async {
     if (!_initialized) return const [];
     if (Platform.isLinux && !_channelAvailable) {
       return LooseEndsBridgeLinux.ingestText(text).map(_draftFromMap).toList();
     }
     try {
-      final result = await _channel.invokeMethod('ingestText', {'text': text});
+      final result = await _channel.invokeMethod('ingestText', {
+        'text': text,
+        'sourceType': sourceType,
+      });
       final list = result is List ? result : const [];
       return list.cast<Map>().map(_draftFromMap).toList();
     } on PlatformException catch (e) {
