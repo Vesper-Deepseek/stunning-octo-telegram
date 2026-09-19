@@ -19,6 +19,7 @@ jobs:
       github.event.workflow_run.head_branch == github.event.repository.default_branch &&
       github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout validated commit
         uses: actions/checkout@v4
@@ -110,35 +111,67 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
+            set -euo pipefail
             adb wait-for-device
             adb install -r app/build/app/outputs/flutter-apk/app-release.apk
             adb shell pm grant com.looseends.loose_ends android.permission.POST_NOTIFICATIONS || true
             adb shell am force-stop com.looseends.loose_ends
             adb logcat -c
-            adb shell am start -W -n com.looseends.loose_ends/.MainActivity
+            echo "[release] Launching universal release APK"
+            adb shell am start -W -n com.looseends.loose_ends/.MainActivity > release_start.txt 2>&1
             sleep 8
             adb shell pidof com.looseends.loose_ends > release_app_pid.txt 2>&1
             adb shell uiautomator dump /sdcard/window.xml > release_uiautomator.txt 2>&1 || true
             adb pull /sdcard/window.xml release_window.xml > release_uiautomator_pull.txt 2>&1 || true
             adb exec-out screencap -p > release_startup.png 2> release_screenshot_error.txt || true
             adb logcat -d -v threadtime > release_launch_logcat.txt
-            test -s release_app_pid.txt && grep -Eq '^[0-9]+'
-            ! grep -Eq 'FATAL EXCEPTION|Process: com\\.looseends\\.loose_ends|UnsatisfiedLinkError|NoClassDefFoundError|SIGSEGV|SIGABRT' release_launch_logcat.txt
+            test -s release_app_pid.txt
+            grep -Eq '^[0-9]+' release_app_pid.txt
+            if grep -Eq 'FATAL EXCEPTION|Process: com\.looseends\.loose_ends|UnsatisfiedLinkError|NoClassDefFoundError|SIGSEGV|SIGABRT' release_launch_logcat.txt; then
+              echo "[release] Initial release launch logcat contains a fatal/native error"
+              exit 1
+            fi
+            echo "[release] Initial release APK sanity check passed"
 
+            echo "[release] Disabling device networking for offline integration test"
             adb shell svc wifi disable || true
             adb shell svc data disable || true
-            flutter test integration_test/mvp_smoke_test.dart -d "$ANDROID_SERIAL" --timeout 5m
+            echo "[release] Starting Flutter integration_test"
+            set +e
+            timeout --foreground --signal=TERM --kill-after=30s 7m \
+              flutter test --no-pub --verbose integration_test/mvp_smoke_test.dart \
+                -d "$ANDROID_SERIAL" --timeout 5m 2>&1 | tee release_flutter_integration_test.log
+            test_rc=$?
+            set -e
+            if [ "$test_rc" -ne 0 ]; then
+              echo "[release] Flutter integration_test failed or timed out (exit $test_rc)"
+              adb shell svc wifi enable || true
+              adb shell svc data enable || true
+              adb shell pidof com.looseends.loose_ends > integration_app_pid.txt 2>&1 || true
+              adb shell dumpsys activity activities > integration_activities.txt 2>&1 || true
+              adb logcat -d -v threadtime > integration_logcat.txt || true
+              exit "$test_rc"
+            fi
+            echo "[release] Flutter integration_test passed"
 
+            echo "[release] Re-launching universal release APK"
             adb shell svc wifi enable || true
+            adb shell svc data enable || true
             adb shell am force-stop com.looseends.loose_ends
             adb logcat -c
-            adb shell am start -W -n com.looseends.loose_ends/.MainActivity
+            adb shell am start -W -n com.looseends.loose_ends/.MainActivity > final_release_start.txt 2>&1
             sleep 5
             adb shell pidof com.looseends.loose_ends > final_release_pid.txt 2>&1
             adb exec-out screencap -p > final_release.png 2> final_screenshot_error.txt || true
             adb logcat -d -v threadtime > final_release_logcat.txt
-            test -s final_release_pid.txt && grep -Eq '^[0-9]+'
-            ! grep -Eq 'FATAL EXCEPTION|Process: com\\.looseends\\.loose_ends|UnsatisfiedLinkError|NoClassDefFoundError|SIGSEGV|SIGABRT' final_release_logcat.txt
+            test -s final_release_pid.txt
+            grep -Eq '^[0-9]+' final_release_pid.txt
+            if grep -Eq 'FATAL EXCEPTION|Process: com\.looseends\.loose_ends|UnsatisfiedLinkError|NoClassDefFoundError|SIGSEGV|SIGABRT' final_release_logcat.txt; then
+              echo "[release] Final release launch logcat contains a fatal/native error"
+              exit 1
+            fi
+            echo "[release] Final release APK sanity check passed"
+
 
       - name: Upload release emulator diagnostics
         if: always()
