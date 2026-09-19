@@ -238,6 +238,60 @@ class LooseEndsBridge {
     }
   }
 
+  static Future<Map<String, dynamic>> ocrModelStatus() async {
+    if (!_initialized || !_channelAvailable) return const {};
+    try {
+      final result = await _channel.invokeMethod('ocrModelStatus');
+      return result is Map
+          ? result.map((key, value) => MapEntry(key.toString(), value))
+          : const {};
+    } on PlatformException {
+      return const {};
+    } on MissingPluginException {
+      return const {};
+    }
+  }
+
+  static Future<String?> downloadOcrModels({bool allowMobile = false}) async {
+    if (!_initialized || !_channelAvailable) return 'Native OCR model manager unavailable.';
+    try {
+      final result = await _channel.invokeMethod<Map>('startOcrModelDownload', {
+        'allowMobile': allowMobile,
+      });
+      if (result == null) return 'OCR model download failed.';
+      return result['ok'] == true
+          ? null
+          : result['message']?.toString() ?? 'OCR model download failed.';
+    } on PlatformException catch (e) {
+      return e.message ?? 'OCR model download failed.';
+    } on MissingPluginException {
+      return 'Native OCR model manager unavailable.';
+    }
+  }
+
+  static Future<bool> deleteOcrModels() async {
+    if (!_initialized || !_channelAvailable) return false;
+    try {
+      return await _channel.invokeMethod<bool>('deleteOcrModels') ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  static Future<String?> pickScreenshotAndExtract() async {
+    if (!_initialized || !_channelAvailable) return null;
+    try {
+      return await _channel.invokeMethod<String>('pickScreenshot');
+    } on PlatformException catch (e) {
+      debugPrint('Screenshot OCR failed: ${e.message}');
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
   static Future<Map<String, dynamic>> voiceModelStatus() async {
     if (!_initialized || !_channelAvailable) return const {};
     try {
