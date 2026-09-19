@@ -108,8 +108,8 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            for i in $(seq 1 60); do
-              if adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' | grep -q '^1
+            adb wait-for-device
+            adb shell settings put global window_animation_scale 0
             adb shell settings put global transition_animation_scale 0
             adb shell settings put global animator_duration_scale 0
             adb install -r artifacts/app-release.apk
@@ -128,13 +128,10 @@ jobs:
             test -s artifacts/release_app_pid.txt && grep -Eq '^[0-9]+'
             ! grep -Eq 'FATAL EXCEPTION|Process: com\.looseends\.loose_ends|UnsatisfiedLinkError|NoClassDefFoundError|SIGSEGV|SIGABRT' artifacts/release_launch_logcat.txt
 
-            # Exercise the same application package with Flutter integration_test.
-            # Disable device networking so successful commitment capture is an offline test.
             adb shell svc wifi disable || true
             adb shell svc data disable || true
             flutter test integration_test/mvp_smoke_test.dart -d "$ANDROID_SERIAL" --timeout 5m
 
-            # Reinstall and launch the release artifact again after integration_test.
             adb shell svc wifi enable || true
             adb install -r artifacts/app-release.apk
             adb shell pm grant com.looseends.loose_ends android.permission.POST_NOTIFICATIONS || true
