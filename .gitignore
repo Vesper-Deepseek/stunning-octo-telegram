@@ -1,17 +1,4 @@
-# Rust build output
-**/target/
-
-# Flutter/Dart generated files
-app/.dart_tool/
-app/build/
-app/.flutter-plugins
-app/.flutter-plugins-dependencies
-
-# Android local machine configuration
-app/android/local.properties
-
-# IDE / OS files
-.idea/
-.vscode/
-*.iml
-.DS_Store
+```
+# Gradle
+.gradle/
+```
