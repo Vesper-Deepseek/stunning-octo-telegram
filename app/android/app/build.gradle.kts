@@ -28,6 +28,13 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    // Compress native .so files inside the APK to reduce universal download size.
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 dependencies {
