@@ -45,18 +45,12 @@ jobs:
         run: |
           flutter pub get
           chmod +x android/gradlew
-          ./android/gradlew -p android :app:assembleRelease
+          ./android/gradlew -p android :app:extractOpenCvNativeLibs
 
           for abi in arm64-v8a armeabi-v7a x86_64; do
-            SOURCE="$(find android/app/build/intermediates -type f -name libopencv_java4.so -path "*/lib/${abi}/libopencv_java4.so" | head -n 1)"
-            if [ -z "$SOURCE" ]; then
-              echo "OpenCV native library not found in Gradle intermediates for $abi"
-              exit 1
-            fi
-            mkdir -p "android/app/src/main/jniLibs/${abi}"
-            cp "$SOURCE" "android/app/src/main/jniLibs/${abi}/libopencv_java4.so"
-            test -s "android/app/src/main/jniLibs/${abi}/libopencv_java4.so"
-            echo "Packaged OpenCV native library for $abi from $SOURCE"
+            LIB="android/app/src/main/jniLibs/${abi}/libopencv_java4.so"
+            test -s "$LIB"
+            echo "OpenCV native library ready for $abi: $LIB"
           done
 
       - name: Install Rust Android targets

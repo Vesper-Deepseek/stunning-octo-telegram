@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.Copy
+
 plugins {
     id("com.android.application")
     id("dev.flutter.flutter-gradle-plugin")
@@ -51,4 +53,19 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+tasks.register<Copy>("extractOpenCvNativeLibs") {
+    from({
+        configurations.getByName("releaseRuntimeClasspath")
+            .filter { it.name == "opencv-4.10.0.aar" }
+            .map { zipTree(it) }
+    }) {
+        include("jni/**/libopencv_java4.so")
+        eachFile {
+            path = path.removePrefix("jni/")
+        }
+        includeEmptyDirs = false
+    }
+    into(layout.projectDirectory.dir("src/main/jniLibs"))
 }
