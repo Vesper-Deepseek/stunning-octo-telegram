@@ -113,7 +113,7 @@ jobs:
           unzip -l "$APK" | grep -F "lib/x86_64/libloose_ends_voice.so"
           test -s "$APK"
           if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$APK" \
+            gh release upload "$TAG" "$APK" "${APK}.sha256" \
               --repo "${{ github.repository }}" \
               --clobber
             gh release edit "$TAG" \
@@ -122,9 +122,20 @@ jobs:
               --title "Loose Ends ${TAG}" \
               --notes "Universal Android release built from ${{ github.event.workflow_run.head_sha }}. CI passed; emulator validation was intentionally disabled."
           else
-            gh release create "$TAG" "$APK" \
+            gh release create "$TAG" "$APK" "${APK}.sha256" \
               --repo "${{ github.repository }}" \
               --target "${{ github.event.workflow_run.head_sha }}" \
               --title "Loose Ends ${TAG}" \
               --notes "Universal Android release built from ${{ github.event.workflow_run.head_sha }}. CI passed; emulator validation was intentionally disabled."
           fi
+          sha256sum "$APK" | tee "${APK}.sha256"
+          echo "Verifying the public GitHub Release asset can be downloaded"
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/app-release.apk"
+          rm -f /tmp/loose-ends-release.apk
+          curl -fL --retry 5 --retry-all-errors --connect-timeout 30 --max-time 900 "$DOWNLOAD_URL" -o /tmp/loose-ends-release.apk
+          test -s /tmp/loose-ends-release.apk
+          EXPECTED_SHA="$(awk '{print $1}' "${APK}.sha256")"
+          DOWNLOADED_SHA="$(sha256sum /tmp/loose-ends-release.apk | awk '{print $1}')"
+          test "$EXPECTED_SHA" = "$DOWNLOADED_SHA"
+          test "$(stat -c%s "$APK")" -eq "$(stat -c%s /tmp/loose-ends-release.apk)"
+          echo "GitHub release APK download verified successfully."
