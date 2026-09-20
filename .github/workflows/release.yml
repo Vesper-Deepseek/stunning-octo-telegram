@@ -99,7 +99,7 @@ jobs:
           APK="app/build/app/outputs/flutter-apk/app-release.apk"
           test -s "$APK"
 
-          for asset in             "lib/arm64-v8a/libloose_ends_native.so"             "lib/armeabi-v7a/libloose_ends_native.so"             "lib/x86_64/libloose_ends_native.so"             "lib/arm64-v8a/libloose_ends_voice.so"             "lib/armeabi-v7a/libloose_ends_voice.so"             "lib/x86_64/libloose_ends_voice.so"
+          for asset in             "lib/arm64-v8a/libloose_ends_native.so"             "lib/armeabi-v7a/libloose_ends_native.so"             "lib/x86_64/libloose_ends_native.so"             "lib/arm64-v8a/libloose_ends_voice.so"             "lib/armeabi-v7a/libloose_ends_voice.so"             "lib/x86_64/libloose_ends_voice.so"             "lib/arm64-v8a/libopencv_java4.so"             "lib/armeabi-v7a/libopencv_java4.so"             "lib/x86_64/libopencv_java4.so"
           do
             unzip -l "$APK" | grep -F "$asset"
           done

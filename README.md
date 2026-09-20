@@ -6,11 +6,11 @@ Loose Ends turns notes, messages, screenshots, and voice captures into reviewabl
 
 ## MVP release
 
-**Current release: v1.0.5**
+**Current release: v1.0.6**
 
 The universal Android APK is built and published directly from pushes to `main` by the release workflow.
 
-[Download the v1.0.5 APK](https://github.com/Vesper-Deepseek/stunning-octo-telegram/releases/download/v1.0.5/app-release.apk) · [Release notes](https://github.com/Vesper-Deepseek/stunning-octo-telegram/releases/tag/v1.0.5)
+[Download the v1.0.6 APK](https://github.com/Vesper-Deepseek/stunning-octo-telegram/releases/download/v1.0.6/app-release.apk) · [Release notes](https://github.com/Vesper-Deepseek/stunning-octo-telegram/releases/tag/v1.0.6)
 
 The release workflow verifies that the APK is uploaded to GitHub Releases, can be downloaded through its public release URL, and matches the build checksum.
 
