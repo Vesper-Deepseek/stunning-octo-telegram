@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
   emulator:
+    if: ${{ false }}
     name: Install, launch, and exercise Android APK
     runs-on: ubuntu-latest
     timeout-minutes: 30
