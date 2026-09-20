@@ -1,0 +1,9 @@
+MIT License
+
+Canonical license text:
+https://opensource.org/license/mit/
+
+SPDX-License-Identifier: MIT
+
+This single MIT license reference covers applicable third-party
+components documented in LICENSES/THIRD_PARTY.md.

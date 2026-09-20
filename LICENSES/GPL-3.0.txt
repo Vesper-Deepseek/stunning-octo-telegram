@@ -1,0 +1,15 @@
+GNU GENERAL PUBLIC LICENSE
+Version 3, 29 June 2007
+
+Loose Ends identifies the project license as GPL-3.0-only.
+
+Canonical, unmodified GNU GPL v3.0 text:
+https://www.gnu.org/licenses/gpl-3.0.html
+https://www.gnu.org/licenses/gpl-3.0.txt
+
+Project notice:
+Loose Ends
+Copyright (C) 2026 Vesper-Deepseek
+SPDX-License-Identifier: GPL-3.0-only
+
+The official GNU GPL v3.0 document is the controlling license text.
