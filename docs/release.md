@@ -7,47 +7,36 @@ The application version is stored in `app/pubspec.yaml`.
 Example:
 
 ```yaml
-version: 1.0.4+1
+version: 1.0.5+1
 ```
 
 The GitHub release workflow converts the semantic version to a Git tag:
 
 ```text
-1.0.4 -> v1.0.4
+1.0.5 -> v1.0.5
 ```
 
-## CI flow
+## Trigger
 
-A push to `main` runs CI. The release workflow is triggered from a successful CI run on the default branch.
+The release workflow runs on:
 
-Release conditions require a successful CI conclusion, the default branch, and the original repository as the workflow head repository.
+- every push to `main`
+- manual `workflow_dispatch`
+
+It no longer depends on a completed CI `workflow_run` event.
 
 ## Universal APK
 
-The release job builds native Rust libraries for:
+The release job builds native Rust libraries for arm64-v8a, armeabi-v7a, and x86_64 and packages them into one universal Flutter APK.
 
-- arm64-v8a
-- armeabi-v7a
-- x86_64
-
-It then creates a universal Flutter APK.
-
-Before publishing, the workflow checks that all six expected native libraries exist in the APK.
+The v1.0.5 release notes identify the universal APK contents, including the main Rust bridge and isolated Whisper voice library.
 
 ## Integrity verification
 
-The workflow creates `app-release.apk.sha256`.
+The workflow creates `app-release.apk.sha256`, uploads it with the APK, then downloads the public release URL again and compares SHA-256 and file size.
 
-After upload, it fetches the public release URL again with `curl`, computes the downloaded SHA-256, and compares it with the build checksum and file size.
+A successful release therefore verifies both artifact creation and public GitHub asset retrieval.
 
-A successful release therefore proves both build success and public asset retrieval from GitHub Releases.
+## v1.0.5
 
-## Release checklist
-
-1. Update `app/pubspec.yaml`.
-2. Update version references in documentation when useful.
-3. Push to `main`.
-4. Confirm CI succeeds.
-5. Confirm Release succeeds.
-6. Confirm the release contains `app-release.apk` and `app-release.apk.sha256`.
-7. Confirm the release log contains the public-download verification success message.
+v1.0.5 is the current release generated from the direct push-to-main release pipeline.
