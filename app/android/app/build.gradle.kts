@@ -1,11 +1,10 @@
 import org.gradle.api.tasks.Copy
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.application") version "9.0.1"
-    id("dev.flutter.flutter-gradle-plugin") apply false
+    id("dev.flutter.flutter-gradle-plugin")
 }
-
-apply(plugin = "dev.flutter.flutter-gradle-plugin")
 
 android {
     namespace = "com.looseends.loose_ends"
@@ -57,9 +56,9 @@ dependencies {
     implementation("org.opencv:opencv:4.10.0")
 }
 
-kotlin {
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+        jvmTarget.set(JvmTarget.JVM_17)
     }
 }
 
