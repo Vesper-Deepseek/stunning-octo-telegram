@@ -1,9 +1,11 @@
 import org.gradle.api.tasks.Copy
 
 plugins {
-    id("com.android.application")
-    id("dev.flutter.flutter-gradle-plugin")
+    id("com.android.application") version "9.0.1"
+    id("dev.flutter.flutter-gradle-plugin") apply false
 }
+
+apply(plugin = "dev.flutter.flutter-gradle-plugin")
 
 android {
     namespace = "com.looseends.loose_ends"
@@ -23,11 +25,6 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
-
-        // Ensure all required ABIs are packaged
-        ndk {
-            abiFilters += listOf("arm64-v8a")
-        }
     }
 
     buildTypes {
