@@ -1,40 +1,38 @@
 ```
-# Build artifacts
+# Gradle
+.gradle/
+build/
+target/
+
+# Android
 *.apk
 *.aar
 *.jar
-*.so
-*.dex
-build/
-app/build/
+local.properties
+gradle-wrapper.properties
 
-# Dependencies
-node_modules/
-vendor/
-
-# Environment
-.env
-.env.local
-.env.*
-
-# Editors
-.vscode/
+# IDE
 .idea/
-*.swp
-*.swo
+.vscode/
+*.iml
+*.ipr
+*.iws
 
 # Logs
 *.log
 
-# OS
-.DS_Store
-Thumbs.db
+# Environment
+.env
+.env.local
+*.env.*
 
-# Gradle
-.gradle/
-!gradle-wrapper.properties
-
-# Android specific
-*.keystore
-local.properties
+# Python (if applicable)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
 ```

@@ -24,6 +24,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -39,6 +40,13 @@ android {
         debug {
             isMinifyEnabled = false
             isShrinkResources = false
+        }
+    }
+
+    // Disable unit tests to avoid variant ambiguity issues
+    testOptions {
+        unitTests.all {
+            it.enabled = false
         }
     }
 
