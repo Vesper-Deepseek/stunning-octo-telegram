@@ -1,4 +1,20 @@
 ```
-# Gradle
+# Dependencies
 .gradle/
+build/
+
+# Environment
+.env
+.env.local
+.env.*
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+
+# Original rules preserved
+*.log
 ```
