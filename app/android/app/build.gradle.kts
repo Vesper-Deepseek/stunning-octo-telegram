@@ -23,6 +23,11 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
+
+        // Ensure all required ABIs are packaged
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
     }
 
     buildTypes {
@@ -42,15 +47,10 @@ android {
     }
 
     // Compress native .so files inside the APK to reduce universal download size.
-    packagingOptions {
+    packaging {
         jniLibs {
             useLegacyPackaging = true
         }
-    }
-
-    // Ensure all required ABIs are packaged
-    ndk {
-        abiFilters += listOf("arm64-v8a")
     }
 }
 
