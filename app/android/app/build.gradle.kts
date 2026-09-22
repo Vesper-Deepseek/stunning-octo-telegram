@@ -1,15 +1,12 @@
-import org.gradle.api.tasks.Copy
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
-    id("com.android.application") version "9.0.1"
-    kotlin("android") version "2.3.20"
+    id("com.android.application") version "8.7.0"
+    id("dev.flutter.flutter-gradle-plugin") version "1.0.0"
 }
 
 android {
     namespace = "com.looseends.loose_ends"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 35
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -19,12 +16,15 @@ android {
 
     defaultConfig {
         applicationId = "com.looseends.loose_ends"
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        minSdk = 24
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0.0"
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Disable unit tests to avoid configuration issues
+        testApplicationId = "com.looseends.loose_ends.test"
     }
 
     buildTypes {
@@ -36,36 +36,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Disable unit tests for release builds
-            unitTestVariants.all {
-                enabled = false
-            }
         }
         debug {
             isMinifyEnabled = false
             isShrinkResources = false
-            // Disable unit tests for debug builds
-            unitTestVariants.all {
-                enabled = false
-            }
         }
-    }
-
-    // Completely disable all unit tests to avoid variant ambiguity
-    testBuildType = "release"
-    testOptions {
-        unitTests {
-            isIncludeAndroidResources = false
-            all {
-                it.enable = false
-            }
-        }
-        animationsDisabled = true
-    }
-
-    // Disable androidTest to avoid configuration cache issues
-    androidTests {
-        enable = false
     }
 
     // Compress native .so files inside the APK to reduce universal download size.
@@ -73,6 +48,14 @@ android {
         jniLibs {
             useLegacyPackaging = true
         }
+    }
+    
+    // Disable all tests to avoid configuration cache issues with AGP
+    testOptions {
+        unitTests.all {
+            it.enabled = false
+        }
+        animationsDisabled = true
     }
 }
 
@@ -82,17 +65,7 @@ dependencies {
     implementation("org.opencv:opencv:4.10.0")
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_17)
-    }
-}
-
-flutter {
-    source = "../.."
-}
-
-tasks.register<Copy>("extractOpenCvNativeLibs") {
+tasks.register("extractOpenCvNativeLibs", Copy::class) {
     from({
         configurations.getByName("releaseRuntimeClasspath")
             .filter { it.name == "opencv-4.10.0.aar" }
