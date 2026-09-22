@@ -1,3 +1,6 @@
+import org.gradle.api.tasks.Copy
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id("com.android.application")
     id("dev.flutter.flutter-gradle-plugin")
@@ -22,7 +25,7 @@ android {
         versionName = "1.0.0"
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        
+
         // Disable unit tests to avoid configuration issues
         testApplicationId = "com.looseends.loose_ends.test"
     }
@@ -49,8 +52,8 @@ android {
             useLegacyPackaging = true
         }
     }
-    
-    // Disable all tests to avoid configuration cache issues with AGP
+
+    // Disable all tests to avoid configuration issues with AGP.
     testOptions {
         unitTests.all {
             it.enabled = false
@@ -65,7 +68,17 @@ dependencies {
     implementation("org.opencv:opencv:4.10.0")
 }
 
-tasks.register("extractOpenCvNativeLibs", Copy::class) {
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
+    }
+}
+
+flutter {
+    source = "../.."
+}
+
+tasks.register<Copy>("extractOpenCvNativeLibs") {
     from({
         configurations.getByName("releaseRuntimeClasspath")
             .filter { it.name == "opencv-4.10.0.aar" }
