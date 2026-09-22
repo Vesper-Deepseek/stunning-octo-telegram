@@ -1,6 +1,6 @@
 plugins {
-    id("com.android.application") version "8.7.0"
-    id("dev.flutter.flutter-gradle-plugin") version "1.0.0"
+    id("com.android.application")
+    id("dev.flutter.flutter-gradle-plugin")
 }
 
 android {
