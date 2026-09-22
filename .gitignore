@@ -1,40 +1,69 @@
 ```
-# Build artifacts
+# Gradle
+.gradle/
+build/
+*.gradle
+
+# Android
+local.properties
 *.apk
 *.aar
-*.jar
 *.so
-*.dex
-build/
-app/build/
 
-# Dependencies
-node_modules/
-vendor/
+# IDE
+.vscode/
+.idea/
 
 # Environment
 .env
 .env.local
-.env.*
-
-# Editors
-.vscode/
-.idea/
-*.swp
-*.swo
+*.env.*
 
 # Logs
 *.log
 
-# OS
+# Temp files
+*.tmp
+*.swp
+
+# Python (if applicable)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Node.js (if applicable)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.nyc_output
+coverage/
+
+# General build artifacts
+dist/
+target/
+out/
+*.class
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.out
+
+# OS generated files
 .DS_Store
 Thumbs.db
-
-# Gradle
-.gradle/
-!gradle-wrapper.properties
-
-# Android specific
-*.keystore
-local.properties
 ```
