@@ -1,11 +1,7 @@
 use std::ffi::{CStr, CString};
-use std::os::raw::c_void;
 use std::ptr;
 
-use jni_sys::{
-    jboolean, jclass, jint, jsize, jstring, JNIEnv, JNINativeMethod, JavaVM, JNI_OK,
-    JNI_VERSION_1_6,
-};
+use jni_sys::{jboolean, jclass, jstring, JNIEnv};
 
 fn jstring_to_optional_string(env: JNIEnv, jstr: jstring) -> Option<String> {
     if jstr.is_null() { return None; }
@@ -39,32 +35,22 @@ unsafe extern "C" fn native_loose_ends_transcribe_wav(
     }
 }
 
-/// Registers the Whisper JNI bridge in the dedicated voice shared library.
+/// JNI name-based export for the Whisper bridge.
+///
+/// The JVM can resolve this method directly from the exported symbol, avoiding
+/// manual RegisterNatives calls during library loading.
 ///
 /// # Safety
-/// The JVM must provide a valid JavaVM pointer during native library loading,
-/// and the target Kotlin class must exist with the expected JNI method signature.
+/// The JVM must pass a valid JNI environment pointer and Java object handles,
+/// and the string handles must remain valid for the duration of the call.
 #[no_mangle]
-pub unsafe extern "C" fn JNI_OnLoad(vm: *mut JavaVM, _reserved: *mut c_void) -> jint {
-    if vm.is_null() { return -1; }
-    let vm_interface = *vm;
-    if vm_interface.is_null() { return -1; }
-    let mut env_ptr: *mut c_void = ptr::null_mut();
-    let get_env = (*vm_interface).v1_2.GetEnv;
-    if get_env(vm, &mut env_ptr as *mut *mut c_void, JNI_VERSION_1_6) != JNI_OK { return -1; }
-    let env = env_ptr as JNIEnv;
-    if env.is_null() { return -1; }
-    let class_name = c"com/looseends/loose_ends/VoiceNativeBridge";
-    let class = ((*env).v1_1.FindClass)(env as *mut JNIEnv, class_name.as_ptr());
-    if class.is_null() { return -1; }
-    let methods = [JNINativeMethod {
-        name: c"looseEndsTranscribeWav".as_ptr().cast_mut(),
-        signature: c"(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;".as_ptr().cast_mut(),
-        fnPtr: native_loose_ends_transcribe_wav as *mut c_void,
-    }];
-    let register = (*env).v1_2.RegisterNatives;
-    if register(env as *mut JNIEnv, class, methods.as_ptr(), methods.len() as jsize) < 0 { return -1; }
-    JNI_VERSION_1_6
+pub unsafe extern "C" fn Java_com_looseends_loose_1ends_VoiceNativeBridge_looseEndsTranscribeWav(
+    env: JNIEnv,
+    class: jclass,
+    wav_path: jstring,
+    model_path: jstring,
+) -> jstring {
+    native_loose_ends_transcribe_wav(env, class, wav_path, model_path)
 }
 
 #[cfg(test)]

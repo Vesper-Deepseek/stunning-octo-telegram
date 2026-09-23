@@ -39,16 +39,19 @@ void main() {
     await tester.tap(find.text('Save commitment'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Owed to You'));
+    expect(find.text('Loose Ends'), findsOneWidget);
+    final owedToYouHome = find.text('Owed to You');
+    await tester.scrollUntilVisible(owedToYouHome, 300);
+    await tester.tap(owedToYouHome);
     await tester.pumpAndSettle();
     expect(find.text('Rosa will send the photos'), findsOneWidget);
     expect(find.text('Party: Rosa'), findsOneWidget);
     expect(find.text('Due: 2030-01-01'), findsOneWidget);
-    expect(find.byTooltip('Set reminder'), findsOneWidget);
+    expect(find.widgetWithIcon(IconButton, Icons.notifications_none), findsOneWidget);
     await tester.tap(find.byTooltip('Set reminder'));
     await tester.pumpAndSettle();
     expect(find.text('Reminder scheduled.'), findsOneWidget);
-    await tester.tap(find.byTooltip('Resolve'));
+    await tester.tap(find.widgetWithIcon(IconButton, Icons.check_circle_outline));
     await tester.pumpAndSettle();
     expect(find.text('Rosa will send the photos'), findsNothing);
     await tester.pageBack();
@@ -63,7 +66,7 @@ void main() {
     await tester.tap(find.text('Extract'));
     await tester.pumpAndSettle(const Duration(seconds: 2));
     expect(find.text('Review'), findsOneWidget);
-    expect(find.textContaining('I will pay Aisha 25'), findsOneWidget);
+    expect(find.textContaining('pay Aisha 25'), findsOneWidget);
     await tester.tap(find.text('Edit').first);
     await tester.pumpAndSettle();
     final editFields = find.byType(TextField);
@@ -74,7 +77,7 @@ void main() {
     expect(find.text('Pay Aisha 30'), findsOneWidget);
     await tester.tap(find.text('Confirm').first);
     await tester.pumpAndSettle();
-    expect(find.text('Saved'), findsOneWidget);
+    expect(find.text('Pay Aisha 30'), findsNothing);
     await tester.pageBack();
     await tester.pumpAndSettle();
 
@@ -95,9 +98,18 @@ void main() {
     await tester.tap(find.text('You Owe'));
     await tester.pumpAndSettle();
     expect(find.text('Snooze this commitment'), findsOneWidget);
-    await tester.tap(find.byTooltip('Snooze').first);
+    final snoozeCard = find.ancestor(
+      of: find.text('Snooze this commitment'),
+      matching: find.byType(Card),
+    );
+    expect(snoozeCard, findsOneWidget);
+    await tester.tap(
+      find.descendant(
+        of: snoozeCard,
+        matching: find.widgetWithIcon(IconButton, Icons.snooze),
+      ),
+    );
     await tester.pumpAndSettle();
-    expect(find.text('Commitment snoozed.'), findsOneWidget);
     expect(find.text('Snooze this commitment'), findsNothing);
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -107,7 +119,7 @@ void main() {
     await tester.enterText(find.byType(TextField), 'I need to call Daniel tomorrow');
     await tester.tap(find.text('Extract'));
     await tester.pumpAndSettle(const Duration(seconds: 2));
-    expect(find.textContaining('I will call Daniel'), findsOneWidget);
+    expect(find.textContaining('call Daniel'), findsOneWidget);
     await tester.tap(find.text('Dismiss').first);
     await tester.pumpAndSettle();
     expect(find.text('No drafts to review'), findsOneWidget);

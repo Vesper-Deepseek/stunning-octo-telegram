@@ -270,10 +270,9 @@ class _CaptureScreenState extends State<CaptureScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Capture')),
-      body: Padding(
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
+        children: [
             TextField(
               controller: _controller,
               maxLines: 5,
@@ -364,8 +363,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
               'Text and voice extraction stay on this device. Voice uses the local Whisper model.',
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

@@ -1,7 +1,7 @@
 #![allow(unused_imports)]
 
 use std::ffi::{CStr, CString};
-use std::os::raw::{c_char, c_void};
+use std::os::raw::c_char;
 use std::ptr;
 
 use chrono::NaiveDate;
@@ -36,13 +36,10 @@ pub mod jni_sys {
 #[cfg(feature = "jni")]
 mod jni_bridge {
     use super::*;
-    use crate::jni_sys::{
-        jboolean, jclass, jint, jlong, jsize, jstring, JNIEnv, JNIInvokeInterface_,
-        JNINativeMethod, JavaVM, JNI_OK, JNI_VERSION_1_6,
-    };
+    use crate::jni_sys::{jboolean, jclass, jint, jlong, jstring, JNIEnv};
 
     unsafe extern "C" fn native_loose_ends_open(
-        env: JNIEnv,
+        env: *mut JNIEnv,
         _class: jclass,
         path: jstring,
     ) -> jlong {
@@ -58,7 +55,7 @@ mod jni_bridge {
 
     #[cfg(feature = "neural")]
     unsafe extern "C" fn native_loose_ends_extract_text(
-        env: JNIEnv,
+        env: *mut JNIEnv,
         _class: jclass,
         store_ptr: jlong,
         text: jstring,
@@ -92,7 +89,7 @@ mod jni_bridge {
     }
 
     unsafe extern "C" fn native_loose_ends_ingest_rules(
-        env: JNIEnv,
+        env: *mut JNIEnv,
         _class: jclass,
         store_ptr: jlong,
         text: jstring,
@@ -115,7 +112,7 @@ mod jni_bridge {
     }
 
     unsafe extern "C" fn native_loose_ends_confirm_draft(
-        env: JNIEnv,
+        env: *mut JNIEnv,
         _class: jclass,
         store_ptr: jlong,
         draft_id: jlong,
@@ -168,7 +165,7 @@ mod jni_bridge {
     }
 
     unsafe extern "C" fn native_loose_ends_list_drafts(
-        _env: JNIEnv,
+        _env: *mut JNIEnv,
         _class: jclass,
         store_ptr: jlong,
     ) -> jstring {
@@ -179,7 +176,7 @@ mod jni_bridge {
     }
 
     unsafe extern "C" fn native_loose_ends_create_commitment(
-        env: JNIEnv,
+        env: *mut JNIEnv,
         _class: jclass,
         store_ptr: jlong,
         description: jstring,
@@ -206,7 +203,7 @@ mod jni_bridge {
     }
 
     unsafe extern "C" fn native_loose_ends_resolve_commitment(
-        env: JNIEnv,
+        env: *mut JNIEnv,
         _class: jclass,
         store_ptr: jlong,
         commitment_id: jlong,
@@ -223,7 +220,7 @@ mod jni_bridge {
     }
 
     unsafe extern "C" fn native_loose_ends_snooze_commitment(
-        _env: JNIEnv,
+        _env: *mut JNIEnv,
         _class: jclass,
         store_ptr: jlong,
         commitment_id: jlong,
@@ -233,7 +230,7 @@ mod jni_bridge {
     }
 
     unsafe extern "C" fn native_loose_ends_list_open(
-        env: JNIEnv,
+        env: *mut JNIEnv,
         _class: jclass,
         store_ptr: jlong,
         direction: jstring,
@@ -255,135 +252,143 @@ mod jni_bridge {
         string_to_jstring(env, &result.unwrap_or_default())
     }
 
-    /// Registers the native bridge methods with the Android JVM and returns the JNI version.
-    ///
-    /// # Safety
-    /// The JVM must pass a valid pointer to a JNI `JavaVM` handle and reserved argument
-    /// according to the JNI invocation contract. This function is called by the JVM during
-    /// native library loading.
+    // Use JNI's standard name-based lookup instead of RegisterNatives. This keeps
+    // library loading independent of the raw JavaVM/JNIEnv struct layout.
     #[no_mangle]
-    pub unsafe extern "C" fn JNI_OnLoad(vm: *mut JavaVM, _reserved: *mut c_void) -> jint {
-        if vm.is_null() {
-            return -1;
-        }
-        let mut env_ptr: *mut c_void = ptr::null_mut();
-        let vm_interface = *vm;
-        if vm_interface.is_null() {
-            return -1;
-        }
-        let get_env = (*vm_interface).v1_2.GetEnv;
-        if get_env(vm, &mut env_ptr as *mut *mut c_void, JNI_VERSION_1_6) != JNI_OK {
-            return -1;
-        }
-        let env: JNIEnv = env_ptr as JNIEnv;
-        if env.is_null() {
-            return -1;
-        }
-        let class_name = CString::new("com/looseends/loose_ends/NativeBridge").unwrap();
-        let find_class = (*env).v1_1.FindClass;
-        let cls = find_class(env as *mut JNIEnv, class_name.as_ptr());
-        if cls.is_null() {
-            return -1;
-        }
-
-        let methods = [
-            JNINativeMethod {
-                name: c"looseEndsOpen".as_ptr().cast_mut(),
-                signature: c"(Ljava/lang/String;)J".as_ptr().cast_mut(),
-                fnPtr: native_loose_ends_open as *mut c_void,
-            },
-            JNINativeMethod {
-                name: c"looseEndsIngestRules".as_ptr().cast_mut(),
-                signature: c"(JLjava/lang/String;III)Ljava/lang/String;"
-                    .as_ptr()
-                    .cast_mut(),
-                fnPtr: native_loose_ends_ingest_rules as *mut c_void,
-            },
-            #[cfg(feature = "neural")]
-            JNINativeMethod {
-                name: c"looseEndsExtractText".as_ptr().cast_mut(),
-                signature:
-                    c"(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;III)Ljava/lang/String;"
-                        .as_ptr()
-                        .cast_mut(),
-                fnPtr: native_loose_ends_extract_text as *mut c_void,
-            },
-            JNINativeMethod {
-                name: c"looseEndsConfirmDraft".as_ptr().cast_mut(),
-                signature:
-                    c"(JJLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)J"
-                        .as_ptr()
-                        .cast_mut(),
-                fnPtr: native_loose_ends_confirm_draft as *mut c_void,
-            },
-            JNINativeMethod {
-                name: c"looseEndsListOpen".as_ptr().cast_mut(),
-                signature: c"(JLjava/lang/String;III)Ljava/lang/String;"
-                    .as_ptr()
-                    .cast_mut(),
-                fnPtr: native_loose_ends_list_open as *mut c_void,
-            },
-            JNINativeMethod {
-                name: c"looseEndsListDrafts".as_ptr().cast_mut(),
-                signature: c"(J)Ljava/lang/String;".as_ptr().cast_mut(),
-                fnPtr: native_loose_ends_list_drafts as *mut c_void,
-            },
-            JNINativeMethod {
-                name: c"looseEndsCreateCommitment".as_ptr().cast_mut(),
-                signature:
-                    c"(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)J"
-                        .as_ptr()
-                        .cast_mut(),
-                fnPtr: native_loose_ends_create_commitment as *mut c_void,
-            },
-            JNINativeMethod {
-                name: c"looseEndsResolveCommitment".as_ptr().cast_mut(),
-                signature: c"(JJLjava/lang/String;)Z".as_ptr().cast_mut(),
-                fnPtr: native_loose_ends_resolve_commitment as *mut c_void,
-            },
-            JNINativeMethod {
-                name: c"looseEndsSnoozeCommitment".as_ptr().cast_mut(),
-                signature: c"(JJ)Z".as_ptr().cast_mut(),
-                fnPtr: native_loose_ends_snooze_commitment as *mut c_void,
-            },
-        ];
-
-        let register = (*env).v1_2.RegisterNatives;
-        let result = register(
-            env as *mut JNIEnv,
-            cls,
-            methods.as_ptr(),
-            methods.len() as jsize,
-        );
-
-        if result < 0 {
-            return -1;
-        }
-
-        JNI_VERSION_1_6
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsOpen(
+        env: *mut JNIEnv,
+        class: jclass,
+        path: jstring,
+    ) -> jlong {
+        native_loose_ends_open(env, class, path)
     }
 
-    unsafe fn jstring_to_optional_string(env: JNIEnv, jstr: jstring) -> Option<String> {
+    #[cfg(feature = "neural")]
+    #[no_mangle]
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsExtractText(
+        env: *mut JNIEnv,
+        class: jclass,
+        store_ptr: jlong,
+        text: jstring,
+        model_path: jstring,
+        source_type: jstring,
+        year: jint,
+        month: jint,
+        day: jint,
+    ) -> jstring {
+        native_loose_ends_extract_text(
+            env, class, store_ptr, text, model_path, source_type, year, month, day,
+        )
+    }
+
+    #[no_mangle]
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsIngestRules(
+        env: *mut JNIEnv,
+        class: jclass,
+        store_ptr: jlong,
+        text: jstring,
+        year: jint,
+        month: jint,
+        day: jint,
+    ) -> jstring {
+        native_loose_ends_ingest_rules(env, class, store_ptr, text, year, month, day)
+    }
+
+    #[no_mangle]
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsConfirmDraft(
+        env: *mut JNIEnv,
+        class: jclass,
+        store_ptr: jlong,
+        draft_id: jlong,
+        description: jstring,
+        direction: jstring,
+        expected_date: jstring,
+        party: jstring,
+    ) -> jlong {
+        native_loose_ends_confirm_draft(
+            env, class, store_ptr, draft_id, description, direction, expected_date, party,
+        )
+    }
+
+    #[no_mangle]
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsListDrafts(
+        env: *mut JNIEnv,
+        class: jclass,
+        store_ptr: jlong,
+    ) -> jstring {
+        native_loose_ends_list_drafts(env, class, store_ptr)
+    }
+
+    #[no_mangle]
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsCreateCommitment(
+        env: *mut JNIEnv,
+        class: jclass,
+        store_ptr: jlong,
+        description: jstring,
+        direction: jstring,
+        expected_date: jstring,
+        party: jstring,
+    ) -> jlong {
+        native_loose_ends_create_commitment(
+            env, class, store_ptr, description, direction, expected_date, party,
+        )
+    }
+
+    #[no_mangle]
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsResolveCommitment(
+        env: *mut JNIEnv,
+        class: jclass,
+        store_ptr: jlong,
+        commitment_id: jlong,
+        note: jstring,
+    ) -> jboolean {
+        native_loose_ends_resolve_commitment(env, class, store_ptr, commitment_id, note)
+    }
+
+    #[no_mangle]
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsSnoozeCommitment(
+        env: *mut JNIEnv,
+        class: jclass,
+        store_ptr: jlong,
+        commitment_id: jlong,
+    ) -> jboolean {
+        native_loose_ends_snooze_commitment(env, class, store_ptr, commitment_id)
+    }
+
+    #[no_mangle]
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsListOpen(
+        env: *mut JNIEnv,
+        class: jclass,
+        store_ptr: jlong,
+        direction: jstring,
+        year: jint,
+        month: jint,
+        day: jint,
+    ) -> jstring {
+        native_loose_ends_list_open(env, class, store_ptr, direction, year, month, day)
+    }
+
+    unsafe fn jstring_to_optional_string(env: *mut JNIEnv, jstr: jstring) -> Option<String> {
         if jstr.is_null() {
             return None;
         }
         let mut is_copy: jboolean = false;
-        let get_utf_chars = (*env).v1_1.GetStringUTFChars;
-        let utf = get_utf_chars(env as *mut JNIEnv, jstr, &mut is_copy);
+        let get_utf_chars = (*(*env)).v1_1.GetStringUTFChars;
+        let utf = get_utf_chars(env, jstr, &mut is_copy);
         if utf.is_null() {
             return None;
         }
         let cstr = CStr::from_ptr(utf);
         let result = cstr.to_str().ok().map(String::from);
-        let release_utf_chars = (*env).v1_1.ReleaseStringUTFChars;
-        release_utf_chars(env as *mut JNIEnv, jstr, utf);
+        let release_utf_chars = (*(*env)).v1_1.ReleaseStringUTFChars;
+        release_utf_chars(env, jstr, utf);
         result
     }
 
-    unsafe fn string_to_jstring(env: JNIEnv, s: &str) -> jstring {
+    unsafe fn string_to_jstring(env: *mut JNIEnv, s: &str) -> jstring {
         let cstr = CString::new(s).unwrap_or_default();
-        let new_string_utf = (*env).v1_1.NewStringUTF;
-        new_string_utf(env as *mut JNIEnv, cstr.as_ptr())
+        let new_string_utf = (*(*env)).v1_1.NewStringUTF;
+        new_string_utf(env, cstr.as_ptr())
     }
 }
 

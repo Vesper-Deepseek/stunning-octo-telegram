@@ -1,7 +1,7 @@
 name: loose_ends
 description: "Privacy-first, on-device commitment tracking app."
 publish_to: 'none'
-version: 1.0.6+1
+version: 0.7.0+7
 
 environment:
   sdk: ^3.12.2

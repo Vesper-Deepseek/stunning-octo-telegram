@@ -12,7 +12,7 @@ chrono = "0.4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 regex = "1"
-llama-cpp-2 = { version = "0.1.154", features = ["common"], optional = true }
+llama-cpp-2 = { version = "0.1.154", default-features = false, features = ["common"], optional = true }
 encoding_rs = { version = "0.8", optional = true }
 tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
 whispercpp = { version = "0.2.1", default-features = false, optional = true }
@@ -25,7 +25,7 @@ rten = { version = "0.26.0", default-features = false, features = ["rten_format"
 tempfile = "3"
 
 [features]
-neural = ["llama-cpp-2", "encoding_rs"]
+neural = ["llama-cpp-2", "llama-cpp-2/android-static-stdcxx", "encoding_rs"]
 voice = ["whispercpp", "hound", "tokio"]
 ocr = ["ocrs", "rten", "image"]
 multimodal = ["voice", "ocr"]
