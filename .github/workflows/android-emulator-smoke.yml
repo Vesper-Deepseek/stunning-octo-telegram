@@ -92,6 +92,9 @@ jobs:
           sha256sum ../artifacts/app-release.apk
           unzip -l ../artifacts/app-release.apk | grep -F "lib/x86_64/libloose_ends_native.so"
           unzip -l ../artifacts/app-release.apk | grep -F "lib/x86_64/libloose_ends_voice.so"
+          unzip -l ../artifacts/app-release.apk | grep -F "lib/x86_64/libc++_shared.so"
+          unzip -p ../artifacts/app-release.apk lib/x86_64/libloose_ends_native.so > /tmp/libloose_ends_native.so
+          test -z "$(readelf -d /tmp/libloose_ends_native.so | grep "libc++_shared.so" || true)"
 
       - name: Run Android emulator
         uses: reactivecircus/android-emulator-runner@v2
