@@ -38,7 +38,7 @@ jobs:
           SDKMANAGER="$(find "${ANDROID_HOME}/cmdline-tools" -type f -path '*/bin/sdkmanager' | head -n 1)"
           test -x "$SDKMANAGER"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
-          "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;28.2.13676358"
+          "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;27.0.12077973"
 
       - name: Extract OpenCV native libraries for all Android ABIs
         working-directory: app
@@ -62,7 +62,7 @@ jobs:
       - name: Build native Rust libraries for all Android ABIs
         working-directory: app
         env:
-          NDK_VERSION: 28.2.13676358
+          NDK_VERSION: 27.0.12077973
           ANDROID_API: 24
         run: |
           NDK_DIR="${ANDROID_HOME}/ndk/${NDK_VERSION}"
