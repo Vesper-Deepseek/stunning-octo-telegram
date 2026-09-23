@@ -39,7 +39,10 @@ void main() {
     await tester.tap(find.text('Save commitment'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Owed to You'));
+    expect(find.text('Loose Ends'), findsOneWidget);
+    final owedToYouHome = find.text('Owed to You');
+    await tester.scrollUntilVisible(owedToYouHome, 300);
+    await tester.tap(owedToYouHome);
     await tester.pumpAndSettle();
     expect(find.text('Rosa will send the photos'), findsOneWidget);
     expect(find.text('Party: Rosa'), findsOneWidget);
