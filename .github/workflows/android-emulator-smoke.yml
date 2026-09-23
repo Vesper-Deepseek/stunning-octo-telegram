@@ -107,7 +107,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            set -euo pipefail
+            set -eu
             adb wait-for-device
             adb shell settings put global window_animation_scale 0
             adb shell settings put global transition_animation_scale 0
@@ -144,8 +144,9 @@ jobs:
             set +e
             timeout --foreground --signal=TERM --kill-after=30s 7m \
               flutter test --no-pub --verbose integration_test/mvp_smoke_test.dart \
-                -d "$ANDROID_SERIAL" --timeout 5m 2>&1 | tee artifacts/flutter_integration_test.log
+                -d "$ANDROID_SERIAL" --timeout 5m > artifacts/flutter_integration_test.log 2>&1
             test_rc=$?
+            cat artifacts/flutter_integration_test.log
             set -e
             if [ "$test_rc" -ne 0 ]; then
               echo "[smoke] Flutter integration_test failed or timed out (exit $test_rc)"
