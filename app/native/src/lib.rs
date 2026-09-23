@@ -373,21 +373,21 @@ mod jni_bridge {
             return None;
         }
         let mut is_copy: jboolean = false;
-        let get_utf_chars = (*env).v1_1.GetStringUTFChars;
+        let get_utf_chars = (*(*env)).v1_1.GetStringUTFChars;
         let utf = get_utf_chars(env, jstr, &mut is_copy);
         if utf.is_null() {
             return None;
         }
         let cstr = CStr::from_ptr(utf);
         let result = cstr.to_str().ok().map(String::from);
-        let release_utf_chars = (*env).v1_1.ReleaseStringUTFChars;
+        let release_utf_chars = (*(*env)).v1_1.ReleaseStringUTFChars;
         release_utf_chars(env, jstr, utf);
         result
     }
 
     unsafe fn string_to_jstring(env: *mut JNIEnv, s: &str) -> jstring {
         let cstr = CString::new(s).unwrap_or_default();
-        let new_string_utf = (*env).v1_1.NewStringUTF;
+        let new_string_utf = (*(*env)).v1_1.NewStringUTF;
         new_string_utf(env, cstr.as_ptr())
     }
 }
