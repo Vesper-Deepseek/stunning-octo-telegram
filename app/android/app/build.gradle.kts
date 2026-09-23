@@ -1,3 +1,4 @@
+import java.util.Properties
 import org.gradle.api.tasks.Copy
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -101,7 +102,7 @@ tasks.register<Copy>("extractOpenCvNativeLibs") {
  */
 tasks.matching { it.name == "mergeReleaseNativeLibs" }.configureEach {
     doLast {
-        val properties = java.util.Properties()
+        val properties = Properties()
         val localProperties = rootProject.file("local.properties")
         if (localProperties.isFile) {
             localProperties.inputStream().use { properties.load(it) }
