@@ -39,7 +39,7 @@ adb shell svc data disable || true
 
 echo "[smoke] Starting Flutter integration_test"
 set +e
-timeout --foreground --signal=TERM --kill-after=30s 7m   flutter test --no-pub --verbose integration_test/mvp_smoke_test.dart     -d "$ANDROID_SERIAL" --timeout 5m > artifacts/flutter_integration_test.log 2>&1
+timeout --foreground --signal=TERM --kill-after=30s 7m   bash -lc 'cd app && flutter test --no-pub --verbose integration_test/mvp_smoke_test.dart -d "$ANDROID_SERIAL" --timeout 5m' > artifacts/flutter_integration_test.log 2>&1
 test_rc=$?
 set -e
 cat artifacts/flutter_integration_test.log
