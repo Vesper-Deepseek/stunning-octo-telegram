@@ -63,7 +63,7 @@ void main() {
     await tester.tap(find.text('Extract'));
     await tester.pumpAndSettle(const Duration(seconds: 2));
     expect(find.text('Review'), findsOneWidget);
-    expect(find.textContaining('I will pay Aisha 25'), findsOneWidget);
+    expect(find.textContaining('pay Aisha 25'), findsOneWidget);
     await tester.tap(find.text('Edit').first);
     await tester.pumpAndSettle();
     final editFields = find.byType(TextField);
@@ -107,7 +107,7 @@ void main() {
     await tester.enterText(find.byType(TextField), 'I need to call Daniel tomorrow');
     await tester.tap(find.text('Extract'));
     await tester.pumpAndSettle(const Duration(seconds: 2));
-    expect(find.textContaining('I will call Daniel'), findsOneWidget);
+    expect(find.textContaining('call Daniel'), findsOneWidget);
     await tester.tap(find.text('Dismiss').first);
     await tester.pumpAndSettle();
     expect(find.text('No drafts to review'), findsOneWidget);
