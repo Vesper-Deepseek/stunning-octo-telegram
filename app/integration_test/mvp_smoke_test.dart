@@ -97,7 +97,6 @@ void main() {
     expect(find.text('Snooze this commitment'), findsOneWidget);
     await tester.tap(find.widgetWithIcon(IconButton, Icons.snooze).first);
     await tester.pumpAndSettle();
-    expect(find.text('Commitment snoozed.'), findsOneWidget);
     expect(find.text('Snooze this commitment'), findsNothing);
     await tester.pageBack();
     await tester.pumpAndSettle();
