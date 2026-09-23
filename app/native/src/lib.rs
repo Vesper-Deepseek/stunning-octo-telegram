@@ -39,7 +39,7 @@ mod jni_bridge {
     use crate::jni_sys::{jboolean, jclass, jint, jlong, jstring, JNIEnv};
 
     unsafe extern "C" fn native_loose_ends_open(
-        env: JNIEnv,
+        env: *mut JNIEnv,
         _class: jclass,
         path: jstring,
     ) -> jlong {
@@ -55,7 +55,7 @@ mod jni_bridge {
 
     #[cfg(feature = "neural")]
     unsafe extern "C" fn native_loose_ends_extract_text(
-        env: JNIEnv,
+        env: *mut JNIEnv,
         _class: jclass,
         store_ptr: jlong,
         text: jstring,
@@ -89,7 +89,7 @@ mod jni_bridge {
     }
 
     unsafe extern "C" fn native_loose_ends_ingest_rules(
-        env: JNIEnv,
+        env: *mut JNIEnv,
         _class: jclass,
         store_ptr: jlong,
         text: jstring,
@@ -112,7 +112,7 @@ mod jni_bridge {
     }
 
     unsafe extern "C" fn native_loose_ends_confirm_draft(
-        env: JNIEnv,
+        env: *mut JNIEnv,
         _class: jclass,
         store_ptr: jlong,
         draft_id: jlong,
@@ -165,7 +165,7 @@ mod jni_bridge {
     }
 
     unsafe extern "C" fn native_loose_ends_list_drafts(
-        _env: JNIEnv,
+        _env: *mut JNIEnv,
         _class: jclass,
         store_ptr: jlong,
     ) -> jstring {
@@ -176,7 +176,7 @@ mod jni_bridge {
     }
 
     unsafe extern "C" fn native_loose_ends_create_commitment(
-        env: JNIEnv,
+        env: *mut JNIEnv,
         _class: jclass,
         store_ptr: jlong,
         description: jstring,
@@ -203,7 +203,7 @@ mod jni_bridge {
     }
 
     unsafe extern "C" fn native_loose_ends_resolve_commitment(
-        env: JNIEnv,
+        env: *mut JNIEnv,
         _class: jclass,
         store_ptr: jlong,
         commitment_id: jlong,
@@ -220,7 +220,7 @@ mod jni_bridge {
     }
 
     unsafe extern "C" fn native_loose_ends_snooze_commitment(
-        _env: JNIEnv,
+        _env: *mut JNIEnv,
         _class: jclass,
         store_ptr: jlong,
         commitment_id: jlong,
@@ -230,7 +230,7 @@ mod jni_bridge {
     }
 
     unsafe extern "C" fn native_loose_ends_list_open(
-        env: JNIEnv,
+        env: *mut JNIEnv,
         _class: jclass,
         store_ptr: jlong,
         direction: jstring,
@@ -255,8 +255,8 @@ mod jni_bridge {
     // Use JNI's standard name-based lookup instead of RegisterNatives. This keeps
     // library loading independent of the raw JavaVM/JNIEnv struct layout.
     #[no_mangle]
-    pub unsafe extern "C" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsOpen(
-        env: JNIEnv,
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsOpen(
+        env: *mut JNIEnv,
         class: jclass,
         path: jstring,
     ) -> jlong {
@@ -265,8 +265,8 @@ mod jni_bridge {
 
     #[cfg(feature = "neural")]
     #[no_mangle]
-    pub unsafe extern "C" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsExtractText(
-        env: JNIEnv,
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsExtractText(
+        env: *mut JNIEnv,
         class: jclass,
         store_ptr: jlong,
         text: jstring,
@@ -282,8 +282,8 @@ mod jni_bridge {
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsIngestRules(
-        env: JNIEnv,
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsIngestRules(
+        env: *mut JNIEnv,
         class: jclass,
         store_ptr: jlong,
         text: jstring,
@@ -295,8 +295,8 @@ mod jni_bridge {
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsConfirmDraft(
-        env: JNIEnv,
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsConfirmDraft(
+        env: *mut JNIEnv,
         class: jclass,
         store_ptr: jlong,
         draft_id: jlong,
@@ -311,8 +311,8 @@ mod jni_bridge {
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsListDrafts(
-        env: JNIEnv,
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsListDrafts(
+        env: *mut JNIEnv,
         class: jclass,
         store_ptr: jlong,
     ) -> jstring {
@@ -320,8 +320,8 @@ mod jni_bridge {
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsCreateCommitment(
-        env: JNIEnv,
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsCreateCommitment(
+        env: *mut JNIEnv,
         class: jclass,
         store_ptr: jlong,
         description: jstring,
@@ -335,8 +335,8 @@ mod jni_bridge {
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsResolveCommitment(
-        env: JNIEnv,
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsResolveCommitment(
+        env: *mut JNIEnv,
         class: jclass,
         store_ptr: jlong,
         commitment_id: jlong,
@@ -346,8 +346,8 @@ mod jni_bridge {
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsSnoozeCommitment(
-        env: JNIEnv,
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsSnoozeCommitment(
+        env: *mut JNIEnv,
         class: jclass,
         store_ptr: jlong,
         commitment_id: jlong,
@@ -356,8 +356,8 @@ mod jni_bridge {
     }
 
     #[no_mangle]
-    pub unsafe extern "C" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsListOpen(
-        env: JNIEnv,
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsListOpen(
+        env: *mut JNIEnv,
         class: jclass,
         store_ptr: jlong,
         direction: jstring,
@@ -368,27 +368,27 @@ mod jni_bridge {
         native_loose_ends_list_open(env, class, store_ptr, direction, year, month, day)
     }
 
-    unsafe fn jstring_to_optional_string(env: JNIEnv, jstr: jstring) -> Option<String> {
+    unsafe fn jstring_to_optional_string(env: *mut JNIEnv, jstr: jstring) -> Option<String> {
         if jstr.is_null() {
             return None;
         }
         let mut is_copy: jboolean = false;
         let get_utf_chars = (*env).v1_1.GetStringUTFChars;
-        let utf = get_utf_chars(env as *mut JNIEnv, jstr, &mut is_copy);
+        let utf = get_utf_chars(env, jstr, &mut is_copy);
         if utf.is_null() {
             return None;
         }
         let cstr = CStr::from_ptr(utf);
         let result = cstr.to_str().ok().map(String::from);
         let release_utf_chars = (*env).v1_1.ReleaseStringUTFChars;
-        release_utf_chars(env as *mut JNIEnv, jstr, utf);
+        release_utf_chars(env, jstr, utf);
         result
     }
 
-    unsafe fn string_to_jstring(env: JNIEnv, s: &str) -> jstring {
+    unsafe fn string_to_jstring(env: *mut JNIEnv, s: &str) -> jstring {
         let cstr = CString::new(s).unwrap_or_default();
         let new_string_utf = (*env).v1_1.NewStringUTF;
-        new_string_utf(env as *mut JNIEnv, cstr.as_ptr())
+        new_string_utf(env, cstr.as_ptr())
     }
 }
 
