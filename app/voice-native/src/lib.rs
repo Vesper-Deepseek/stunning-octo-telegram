@@ -39,6 +39,10 @@ unsafe extern "C" fn native_loose_ends_transcribe_wav(
 ///
 /// The JVM can resolve this method directly from the exported symbol, avoiding
 /// manual RegisterNatives calls during library loading.
+///
+/// # Safety
+/// The JVM must pass a valid JNI environment pointer and Java object handles,
+/// and the string handles must remain valid for the duration of the call.
 #[no_mangle]
 pub unsafe extern "C" fn Java_com_looseends_loose_1ends_VoiceNativeBridge_looseEndsTranscribeWav(
     env: JNIEnv,
