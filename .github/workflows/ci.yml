@@ -222,7 +222,7 @@ jobs:
         run: |
           SDKMANAGER="$(find "${ANDROID_HOME}/cmdline-tools" -type f -path '*/bin/sdkmanager' | head -n 1)"
           yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
-          "$SDKMANAGER" "platform-tools" "ndk;27.0.12077973"
+          "$SDKMANAGER" "platform-tools" "ndk;28.2.13676358"
 
       - name: Set up Rust Android targets for Flutter build
         run: rustup target add aarch64-linux-android
@@ -230,7 +230,7 @@ jobs:
       - name: Build arm64 native libraries
         working-directory: app
         env:
-          NDK_VERSION: 27.0.12077973
+          NDK_VERSION: 28.2.13676358
           ANDROID_API: 24
         run: |
           TOOLCHAIN="${ANDROID_HOME}/ndk/${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin"
@@ -240,9 +240,9 @@ jobs:
           export CXX_aarch64_linux_android="${TOOLCHAIN}/aarch64-linux-android${ANDROID_API}-clang++"
           export CARGO_CFG_TARGET_FEATURE=""
           export BINDGEN_EXTRA_CLANG_ARGS="--sysroot=${ANDROID_HOME}/ndk/${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/sysroot --target=aarch64-linux-android${ANDROID_API}"
-          RUSTFLAGS="-C link-arg=-static-libstdc++" cargo build --manifest-path native/Cargo.toml --release --target aarch64-linux-android --features jni,neural
+          cargo build --manifest-path native/Cargo.toml --release --target aarch64-linux-android --features jni,neural
           cargo generate-lockfile --manifest-path voice-native/Cargo.toml
-          RUSTFLAGS="-C link-arg=-static-libstdc++" cargo build --manifest-path voice-native/Cargo.toml --release --target aarch64-linux-android
+          cargo build --manifest-path voice-native/Cargo.toml --release --target aarch64-linux-android
           mkdir -p android/app/src/main/jniLibs/arm64-v8a
           cp native/target/aarch64-linux-android/release/libloose_ends_native.so android/app/src/main/jniLibs/arm64-v8a/
           cp voice-native/target/aarch64-linux-android/release/libloose_ends_voice_native.so android/app/src/main/jniLibs/arm64-v8a/libloose_ends_voice.so
