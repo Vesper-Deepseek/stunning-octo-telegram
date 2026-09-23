@@ -95,7 +95,17 @@ void main() {
     await tester.tap(find.text('You Owe'));
     await tester.pumpAndSettle();
     expect(find.text('Snooze this commitment'), findsOneWidget);
-    await tester.tap(find.widgetWithIcon(IconButton, Icons.snooze).first);
+    final snoozeCard = find.ancestor(
+      of: find.text('Snooze this commitment'),
+      matching: find.byType(Card),
+    );
+    expect(snoozeCard, findsOneWidget);
+    await tester.tap(
+      find.descendant(
+        of: snoozeCard,
+        matching: find.widgetWithIcon(IconButton, Icons.snooze),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Snooze this commitment'), findsNothing);
     await tester.pageBack();
