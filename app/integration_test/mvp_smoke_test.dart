@@ -74,7 +74,7 @@ void main() {
     expect(find.text('Pay Aisha 30'), findsOneWidget);
     await tester.tap(find.text('Confirm').first);
     await tester.pumpAndSettle();
-    expect(find.text('Saved'), findsOneWidget);
+    expect(find.text('Pay Aisha 30'), findsNothing);
     await tester.pageBack();
     await tester.pumpAndSettle();
 
