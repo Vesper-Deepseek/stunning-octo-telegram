@@ -49,8 +49,10 @@ class _OweYouScreenState extends State<OweYouScreen> {
     if (!mounted) return;
     if (ok) {
       await LooseEndsBridge.cancelReminder(c.id);
+      if (!mounted) return;
       setState(_reload);
     }
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(ok ? 'Commitment resolved.' : 'Could not resolve commitment.')),
     );
