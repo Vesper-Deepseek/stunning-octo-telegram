@@ -44,11 +44,11 @@ void main() {
     expect(find.text('Rosa will send the photos'), findsOneWidget);
     expect(find.text('Party: Rosa'), findsOneWidget);
     expect(find.text('Due: 2030-01-01'), findsOneWidget);
-    expect(find.byTooltip('Set reminder'), findsOneWidget);
+    expect(find.widgetWithIcon(IconButton, Icons.notifications_none), findsOneWidget);
     await tester.tap(find.byTooltip('Set reminder'));
     await tester.pumpAndSettle();
     expect(find.text('Reminder scheduled.'), findsOneWidget);
-    await tester.tap(find.byTooltip('Resolve'));
+    await tester.tap(find.widgetWithIcon(IconButton, Icons.check_circle_outline));
     await tester.pumpAndSettle();
     expect(find.text('Rosa will send the photos'), findsNothing);
     await tester.pageBack();
@@ -95,7 +95,7 @@ void main() {
     await tester.tap(find.text('You Owe'));
     await tester.pumpAndSettle();
     expect(find.text('Snooze this commitment'), findsOneWidget);
-    await tester.tap(find.byTooltip('Snooze').first);
+    await tester.tap(find.widgetWithIcon(IconButton, Icons.snooze).first);
     await tester.pumpAndSettle();
     expect(find.text('Commitment snoozed.'), findsOneWidget);
     expect(find.text('Snooze this commitment'), findsNothing);
