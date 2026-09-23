@@ -1,3 +1,4 @@
+import java.util.Properties
 import org.gradle.api.tasks.Copy
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -93,7 +94,6 @@ tasks.register<Copy>("extractOpenCvNativeLibs") {
     into(layout.projectDirectory.dir("src/main/jniLibs"))
 }
 
-import java.util.Properties
 
 /*
  * The Rust neural bridge uses the Android NDK's libc++ ABI. Some AARs
