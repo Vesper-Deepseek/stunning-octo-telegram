@@ -277,7 +277,15 @@ mod jni_bridge {
         day: jint,
     ) -> jstring {
         native_loose_ends_extract_text(
-            env, class, store_ptr, text, model_path, source_type, year, month, day,
+            env,
+            class,
+            store_ptr,
+            text,
+            model_path,
+            source_type,
+            year,
+            month,
+            day,
         )
     }
 
@@ -306,7 +314,14 @@ mod jni_bridge {
         party: jstring,
     ) -> jlong {
         native_loose_ends_confirm_draft(
-            env, class, store_ptr, draft_id, description, direction, expected_date, party,
+            env,
+            class,
+            store_ptr,
+            draft_id,
+            description,
+            direction,
+            expected_date,
+            party,
         )
     }
 
@@ -330,7 +345,13 @@ mod jni_bridge {
         party: jstring,
     ) -> jlong {
         native_loose_ends_create_commitment(
-            env, class, store_ptr, description, direction, expected_date, party,
+            env,
+            class,
+            store_ptr,
+            description,
+            direction,
+            expected_date,
+            party,
         )
     }
 
