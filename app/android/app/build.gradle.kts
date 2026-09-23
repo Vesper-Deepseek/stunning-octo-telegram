@@ -10,7 +10,7 @@ plugins {
 android {
     namespace = "com.looseends.loose_ends"
     compileSdk = 35
-    ndkVersion = "28.2.13676358"
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -92,45 +92,4 @@ tasks.register<Copy>("extractOpenCvNativeLibs") {
         includeEmptyDirs = false
     }
     into(layout.projectDirectory.dir("src/main/jniLibs"))
-}
-
-/*
- * The Rust neural bridge links against Android's libc++ shared runtime.
- * Some Flutter/plugin AARs can contribute an older libc++_shared.so. Replace
- * the merged copy with the exact runtime from the NDK used to build Rust,
- * before the APK is packaged and signed.
- */
-tasks.matching { it.name == "mergeReleaseNativeLibs" }.configureEach {
-    doLast {
-        val properties = Properties()
-        val localProperties = rootProject.file("local.properties")
-        if (localProperties.isFile) {
-            localProperties.inputStream().use { properties.load(it) }
-        }
-
-        val sdkPath = properties.getProperty("sdk.dir")
-            ?: System.getenv("ANDROID_SDK_ROOT")
-            ?: System.getenv("ANDROID_HOME")
-        require(!sdkPath.isNullOrBlank()) { "Android SDK path is required to package libc++_shared.so" }
-
-        val ndkPath = rootProject.file("$sdkPath/ndk/28.2.13676358")
-        val mergedLibRoot = layout.buildDirectory
-            .dir("intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib")
-            .get()
-            .asFile
-
-        listOf("arm64-v8a", "armeabi-v7a", "x86_64").forEach { abi ->
-            val targetDir = mergedLibRoot.resolve(abi)
-            if (!targetDir.isDirectory) return@forEach
-
-            val source = ndkPath.resolve(
-                "sources/cxx-stl/llvm-libc++/libs/$abi/libc++_shared.so"
-            )
-            require(source.isFile) {
-                "Matching NDK libc++_shared.so not found for $abi: $source"
-            }
-
-            source.copyTo(targetDir.resolve("libc++_shared.so"), overwrite = true)
-        }
-    }
 }
