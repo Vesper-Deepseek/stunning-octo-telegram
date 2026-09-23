@@ -25,7 +25,7 @@ rten = { version = "0.26.0", default-features = false, features = ["rten_format"
 tempfile = "3"
 
 [features]
-neural = ["llama-cpp-2", "encoding_rs"]
+neural = ["llama-cpp-2", "llama-cpp-2/android-static-stdcxx", "encoding_rs"]
 voice = ["whispercpp", "hound", "tokio"]
 ocr = ["ocrs", "rten", "image"]
 multimodal = ["voice", "ocr"]
