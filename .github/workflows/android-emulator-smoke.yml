@@ -76,9 +76,9 @@ jobs:
           export CC_x86_64_linux_android="${TOOLCHAIN}/x86_64-linux-android${ANDROID_API}-clang"
           # The emulator runs x86_64, so the smoke-test APK only needs that ABI.
           cargo generate-lockfile --manifest-path native/Cargo.toml
-          cargo build --manifest-path native/Cargo.toml --release --target x86_64-linux-android --features jni,neural
+          RUSTFLAGS="-C link-arg=-static-libstdc++" cargo build --manifest-path native/Cargo.toml --release --target x86_64-linux-android --features jni,neural
           cargo generate-lockfile --manifest-path voice-native/Cargo.toml
-          cargo build --manifest-path voice-native/Cargo.toml --release --target x86_64-linux-android
+          RUSTFLAGS="-C link-arg=-static-libstdc++" cargo build --manifest-path voice-native/Cargo.toml --release --target x86_64-linux-android
           mkdir -p android/app/src/main/jniLibs/x86_64
           cp native/target/x86_64-linux-android/release/libloose_ends_native.so \
             android/app/src/main/jniLibs/x86_64/libloose_ends_native.so
