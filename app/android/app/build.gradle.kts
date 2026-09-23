@@ -1,4 +1,3 @@
-import java.util.Properties
 import org.gradle.api.tasks.Copy
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -10,7 +9,7 @@ plugins {
 android {
     namespace = "com.looseends.loose_ends"
     compileSdk = 35
-    ndkVersion = "27.0.12077973"
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -92,4 +91,50 @@ tasks.register<Copy>("extractOpenCvNativeLibs") {
         includeEmptyDirs = false
     }
     into(layout.projectDirectory.dir("src/main/jniLibs"))
+}
+
+import java.util.Properties
+
+/*
+ * The Rust neural bridge uses the Android NDK's libc++ ABI. Some AARs
+ * contribute an older libc++_shared.so, so overwrite the merged native
+ * runtime with the exact library from the NDK used by the native build.
+ */
+tasks.matching { it.name == "mergeReleaseNativeLibs" }.configureEach {
+    doLast {
+        val properties = Properties()
+        val localProperties = rootProject.file("local.properties")
+        if (localProperties.isFile) {
+            localProperties.inputStream().use { properties.load(it) }
+        }
+
+        val sdkPath = properties.getProperty("sdk.dir")
+            ?: System.getenv("ANDROID_SDK_ROOT")
+            ?: System.getenv("ANDROID_HOME")
+        require(!sdkPath.isNullOrBlank()) {
+            "Android SDK path is required to package libc++_shared.so"
+        }
+
+        val ndkPath = rootProject.file("$sdkPath/ndk/28.2.13676358")
+        val prebuilt = ndkPath.resolve("toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib")
+        val mergedLibRoot = layout.buildDirectory
+            .dir("intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib")
+            .get()
+            .asFile
+
+        mapOf(
+            "arm64-v8a" to "aarch64-linux-android",
+            "armeabi-v7a" to "arm-linux-androideabi",
+            "x86_64" to "x86_64-linux-android"
+        ).forEach { (abi, triple) ->
+            val targetDir = mergedLibRoot.resolve(abi)
+            if (!targetDir.isDirectory) return@forEach
+
+            val source = prebuilt.resolve("$triple/libc++_shared.so")
+            require(source.isFile) {
+                "Matching NDK libc++_shared.so not found for $abi: $source"
+            }
+            source.copyTo(targetDir.resolve("libc++_shared.so"), overwrite = true)
+        }
+    }
 }
