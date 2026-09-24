@@ -84,7 +84,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Download voice model?'),
         content: const Text(
-          'Loose Ends uses an on-device Whisper model for voice transcription. '
+          'Intellex uses an on-device Whisper model for voice transcription. '
           'The model is downloaded only after you approve it, from the fixed official source, '
           'and its SHA-256 is checked before use. Wi-Fi is required by default.',
         ),
@@ -136,7 +136,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Download OCR models?'),
         content: const Text(
-          'Loose Ends uses on-device OCR for screenshots. The OCR models are downloaded only '
+          'Intellex uses on-device OCR for screenshots. The OCR models are downloaded only '
           'after you approve it, from a fixed Apache-2.0 model source, and every file is '
           'SHA-256 checked before use. Wi-Fi is required by default.',
         ),

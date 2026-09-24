@@ -483,7 +483,7 @@ class LooseEndsBridge {
     try {
       return await _channel.invokeMethod<bool>('scheduleReminder', {
         'id': id,
-        'title': 'Loose Ends reminder',
+        'title': 'Intellex reminder',
         'text': description,
         'triggerAtMillis': trigger.millisecondsSinceEpoch,
       }) ?? false;

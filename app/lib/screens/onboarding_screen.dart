@@ -26,7 +26,7 @@ class OnboardingScreen extends StatelessWidget {
               const Icon(Icons.link_off, size: 72),
               const SizedBox(height: 20),
               Text(
-                'Loose Ends',
+                'Intellex',
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: 12),
