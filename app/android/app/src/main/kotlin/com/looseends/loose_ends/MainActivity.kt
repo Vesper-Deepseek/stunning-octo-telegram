@@ -84,7 +84,7 @@ class MainActivity : FlutterActivity() {
                         context = this,
                         modelId = modelId,
                         allowMobile = allowMobile,
-                        onProgress = { progressSink?.success(it) },
+                        onProgress = { progress -> emitModelProgress(progress) },
                         onFinished = { ok, message ->
                             runOnUiThread { result.success(mapOf("ok" to ok, "message" to message)) }
                         }
@@ -100,7 +100,7 @@ class MainActivity : FlutterActivity() {
                     OcrModelManager.downloadAll(
                         context = this,
                         allowMobile = allowMobile,
-                        onProgress = { progressSink?.success(it) },
+                        onProgress = { progress -> emitModelProgress(progress) },
                         onFinished = { ok, message ->
                             runOnUiThread { result.success(mapOf("ok" to ok, "message" to message)) }
                         }
@@ -114,7 +114,7 @@ class MainActivity : FlutterActivity() {
                     VoiceModelManager.startDownload(
                         context = this,
                         allowMobile = allowMobile,
-                        onProgress = { progressSink?.success(it) },
+                        onProgress = { progress -> emitModelProgress(progress) },
                         onFinished = { ok, message ->
                             runOnUiThread { result.success(mapOf("ok" to ok, "message" to message)) }
                         }
@@ -227,6 +227,12 @@ class MainActivity : FlutterActivity() {
                 }
                 else -> result.notImplemented()
             }
+        }
+    }
+
+    private fun emitModelProgress(progress: Map<String, Any>) {
+        runOnUiThread {
+            progressSink?.success(progress)
         }
     }
 
