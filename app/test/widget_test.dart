@@ -20,7 +20,7 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
     final appBar = tester.widget<AppBar>(find.byType(AppBar));
     expect(appBar.title, isA<Text>());
-    expect((appBar.title! as Text).data, 'Loose Ends');
+    expect((appBar.title! as Text).data, 'Intellex');
     expect(find.text('Capture'), findsOneWidget);
     expect(find.text('Review'), findsOneWidget);
     expect(find.text('You Owe'), findsOneWidget);

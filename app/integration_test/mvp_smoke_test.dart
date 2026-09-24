@@ -13,7 +13,7 @@ void main() {
     await app.main();
     await tester.pumpAndSettle(const Duration(seconds: 3));
 
-    expect(find.text('Loose Ends'), findsOneWidget);
+    expect(find.text('Intellex'), findsOneWidget);
     if (find.text('Skip for now').evaluate().isNotEmpty) {
       await tester.tap(find.text('Skip for now'));
       await tester.pumpAndSettle();
@@ -39,7 +39,7 @@ void main() {
     await tester.tap(find.text('Save commitment'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Loose Ends'), findsOneWidget);
+    expect(find.text('Intellex'), findsOneWidget);
     final owedToYouHome = find.text('Owed to You');
     await tester.scrollUntilVisible(owedToYouHome, 300);
     await tester.tap(owedToYouHome);

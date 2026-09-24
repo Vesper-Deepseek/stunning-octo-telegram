@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.looseends.loose_ends"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = "28.2.13676358"
 
     compileOptions {
