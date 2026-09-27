@@ -302,6 +302,50 @@ mod jni_bridge {
         native_loose_ends_ingest_rules(env, class, store_ptr, text, year, month, day)
     }
 
+    unsafe extern "C" fn native_loose_ends_update_draft(
+        env: *mut JNIEnv,
+        _class: jclass,
+        store_ptr: jlong,
+        draft_id: jlong,
+        description: jstring,
+        direction: jstring,
+        expected_date: jstring,
+        party: jstring,
+    ) -> jboolean {
+        let handle = unsafe { &*(store_ptr as *mut StoreHandle) };
+        let desc = jstring_to_optional_string(env, description);
+        let dir = jstring_to_optional_string(env, direction).and_then(|value| match value.as_str() {
+            "user_owes" => Some(models::ExtractDirection::UserOwes),
+            "owed_to_user" => Some(models::ExtractDirection::OwedToUser),
+            "unclear" => Some(models::ExtractDirection::Unclear),
+            _ => None,
+        });
+        let date = if expected_date.is_null() {
+            Some(None)
+        } else {
+            Some(jstring_to_optional_string(env, expected_date))
+        };
+        let party = if party.is_null() {
+            Some(None)
+        } else {
+            Some(jstring_to_optional_string(env, party))
+        };
+        if desc.is_none() || dir.is_none() {
+            return false;
+        }
+
+        match handle.store.update_draft_fields(
+            draft_id,
+            desc.as_deref(),
+            dir,
+            date,
+            party.as_deref(),
+        ) {
+            Ok(()) => true,
+            Err(_) => false,
+        }
+    }
+
     #[no_mangle]
     pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsConfirmDraft(
         env: *mut JNIEnv,
@@ -323,6 +367,40 @@ mod jni_bridge {
             expected_date,
             party,
         )
+    }
+
+    #[no_mangle]
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsUpdateDraft(
+        env: *mut JNIEnv,
+        class: jclass,
+        store_ptr: jlong,
+        draft_id: jlong,
+        description: jstring,
+        direction: jstring,
+        expected_date: jstring,
+        party: jstring,
+    ) -> jboolean {
+        native_loose_ends_update_draft(
+            env,
+            class,
+            store_ptr,
+            draft_id,
+            description,
+            direction,
+            expected_date,
+            party,
+        )
+    }
+
+    #[no_mangle]
+    pub unsafe extern "system" fn Java_com_looseends_loose_1ends_NativeBridge_looseEndsDeleteDraft(
+        _env: *mut JNIEnv,
+        _class: jclass,
+        store_ptr: jlong,
+        draft_id: jlong,
+    ) -> jboolean {
+        let result = super::loose_ends_delete_draft(store_ptr as *mut StoreHandle, draft_id);
+        result == 0
     }
 
     #[no_mangle]
@@ -662,6 +740,64 @@ pub unsafe extern "C" fn loose_ends_confirm_draft(
 ///
 /// # Safety
 /// `handle` must be a valid, live `StoreHandle`. `note` may be null.
+/// Updates a pending draft in place, preserving it as a draft until confirmation.
+#[no_mangle]
+pub unsafe extern "C" fn loose_ends_update_draft(
+    handle: *mut StoreHandle,
+    draft_id: i64,
+    description: *const c_char,
+    direction: *const c_char,
+    expected_date: *const c_char,
+    party: *const c_char,
+) -> i32 {
+    let handle = unsafe { &*handle };
+    let desc = cstr_to_owned(description);
+    let dir = cstr_to_owned(direction).and_then(|value| match value.as_str() {
+        "user_owes" => Some(models::ExtractDirection::UserOwes),
+        "owed_to_user" => Some(models::ExtractDirection::OwedToUser),
+        "unclear" => Some(models::ExtractDirection::Unclear),
+        _ => None,
+    });
+    let date = if expected_date.is_null() {
+        Some(None)
+    } else {
+        Some(cstr_to_owned(expected_date))
+    };
+    let party = if party.is_null() {
+        Some(None)
+    } else {
+        Some(cstr_to_owned(party))
+    };
+
+    if desc.is_none() || dir.is_none() {
+        return -1;
+    }
+
+    match handle.store.update_draft_fields(
+        draft_id,
+        desc.as_deref(),
+        dir,
+        date,
+        party,
+    ) {
+        Ok(()) => 0,
+        Err(_) => -1,
+    }
+}
+
+/// Deletes a pending draft and cleans up its source row when no longer referenced.
+#[no_mangle]
+pub unsafe extern "C" fn loose_ends_delete_draft(
+    handle: *mut StoreHandle,
+    draft_id: i64,
+) -> i32 {
+    let handle = unsafe { &*handle };
+    match handle.store.delete_draft(draft_id) {
+        Ok(count) if count > 0 => 0,
+        _ => -1,
+    }
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn loose_ends_resolve_commitment(
     handle: *mut StoreHandle,
