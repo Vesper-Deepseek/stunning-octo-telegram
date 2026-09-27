@@ -41,8 +41,30 @@ class OfflineOcrEngine(private val context: Context) {
     fun recognize(imageFile: File): String {
         require(imageFile.isFile) { "OCR image is not available." }
         ensureLoaded()
-        val bitmap = BitmapFactory.decodeFile(imageFile.absolutePath)
+
+        // Screenshots can be very large (especially scrolling captures). Decode a
+        // bounded bitmap instead of the full source image so OCR cannot exhaust the
+        // Android heap and kill the app before detection starts.
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(imageFile.absolutePath, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
+            throw IllegalArgumentException("Could not decode the screenshot.")
+        }
+
+        val maxDimension = 1920
+        val largest = max(bounds.outWidth, bounds.outHeight)
+        var sample = 1
+        while (largest / sample > maxDimension) {
+            sample *= 2
+        }
+
+        val options = BitmapFactory.Options().apply {
+            inSampleSize = sample
+            inPreferredConfig = android.graphics.Bitmap.Config.ARGB_8888
+        }
+        val bitmap = BitmapFactory.decodeFile(imageFile.absolutePath, options)
             ?: throw IllegalArgumentException("Could not decode the screenshot.")
+
         try {
             val src = bitmapToBgr(bitmap)
             return try {
@@ -148,7 +170,7 @@ class OfflineOcrEngine(private val context: Context) {
         var ratio = if (minSide < limit) limit / minSide else 1.0
         var newH = (h * ratio).toInt()
         var newW = (w * ratio).toInt()
-        val maxSideLimit = 4000
+        val maxSideLimit = 1920
         if (max(newH, newW) > maxSideLimit) {
             ratio = maxSideLimit.toDouble() / max(newH, newW).toDouble()
             newH = (newH * ratio).toInt()
