@@ -164,10 +164,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
     final index = _drafts.indexWhere((d) => d.id == draft.id);
     if (index < 0) return;
 
-    final description = edited.description.isEmpty ? draft.description : edited.description;
+    final updatedDescription =
+        edited.description.isEmpty ? draft.description : edited.description;
     final saved = await LooseEndsBridge.updateDraft(
       draft,
-      description: description,
+      description: updatedDescription,
       direction: edited.direction,
       expectedDate: edited.date,
       party: edited.party,
