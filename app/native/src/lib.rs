@@ -338,7 +338,7 @@ mod jni_bridge {
             draft_id,
             desc.as_deref(),
             dir,
-            date,
+            date.as_deref(),
             party.as_deref(),
         ) {
             Ok(()) => true,
