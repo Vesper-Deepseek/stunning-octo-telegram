@@ -777,8 +777,8 @@ pub unsafe extern "C" fn loose_ends_update_draft(
         draft_id,
         desc.as_deref(),
         dir,
-        date,
-        party,
+        date.as_ref().map(|v| v.as_deref()),
+        party.as_ref().map(|v| v.as_deref()),
     ) {
         Ok(()) => 0,
         Err(_) => -1,
