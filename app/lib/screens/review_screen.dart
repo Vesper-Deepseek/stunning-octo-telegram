@@ -184,7 +184,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
     setState(() {
       _drafts[index] = Draft(
         id: draft.id,
-        description: description,
+        description: updatedDescription,
         direction: edited.direction.name,
         expectedDate: edited.date,
         party: edited.party,
