@@ -430,9 +430,16 @@ class MainActivity : FlutterActivity() {
                         val text = offlineOcr.recognize(image)
                         image.delete()
                         runOnUiThread { result.success(text) }
-                    } catch (e: Exception) {
+                    } catch (t: Throwable) {
                         image.delete()
-                        runOnUiThread { result.error("ocr_failed", e.message, null) }
+                        android.util.Log.e("MainActivity", "Screenshot OCR failed", t)
+                        runOnUiThread {
+                            result.error(
+                                "ocr_failed",
+                                t.message ?: "On-device OCR failed.",
+                                null,
+                            )
+                        }
                     }
                 }.start()
             }
