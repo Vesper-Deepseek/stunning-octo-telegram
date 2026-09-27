@@ -63,12 +63,18 @@ class _CaptureScreenState extends State<CaptureScreen> {
         return;
       }
 
-      await Navigator.pushReplacement(
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => ReviewScreen(newDrafts: drafts),
         ),
       );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Extraction failed: $e')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
