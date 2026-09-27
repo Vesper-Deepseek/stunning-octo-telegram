@@ -63,7 +63,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
         return;
       }
 
-      await Navigator.push(
+      await Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (_) => ReviewScreen(newDrafts: drafts),
