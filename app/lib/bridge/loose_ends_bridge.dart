@@ -75,9 +75,64 @@ class LooseEndsBridge {
       return list.cast<Map>().map(_draftFromMap).toList();
     } on PlatformException catch (e) {
       debugPrint('Text extraction failed: ${e.message}');
-      return const [];
+      throw StateError(e.message ?? 'On-device extraction failed.');
     } on MissingPluginException {
-      return const [];
+      throw StateError('Native extraction bridge is unavailable.');
+    }
+  }
+
+  static Future<bool> updateDraft(
+    Draft draft, {
+    required String description,
+    required Direction direction,
+    String? expectedDate,
+    String? party,
+  }) async {
+    if (!_initialized) return false;
+    if (Platform.isLinux && !_channelAvailable) {
+      return LooseEndsBridgeLinux.updateDraft(
+        {
+          'id': draft.id,
+          'description': draft.description,
+          'direction': draft.direction,
+          'expected_date': draft.expectedDate,
+          'party': draft.party,
+        },
+        descriptionOverride: description,
+        directionOverride: direction.name,
+        dateOverride: expectedDate,
+        partyOverride: party,
+      );
+    }
+    try {
+      return await _channel.invokeMethod<bool>('updateDraft', {
+        'draftId': draft.id,
+        'description': description,
+        'direction': direction.name,
+        'expected_date': expectedDate,
+        'party': party,
+      }) ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  static Future<bool> deleteDraft(Draft draft) async {
+    if (!_initialized) return false;
+    if (Platform.isLinux && !_channelAvailable) {
+      return LooseEndsBridgeLinux.deleteDraft(draft.id);
+    }
+    try {
+      return await _channel.invokeMethod<bool>(
+        'deleteDraft',
+        {'draftId': draft.id},
+      ) ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
     }
   }
 
