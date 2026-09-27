@@ -786,6 +786,9 @@ pub unsafe extern "C" fn loose_ends_update_draft(
 }
 
 /// Deletes a pending draft and cleans up its source row when no longer referenced.
+///
+/// # Safety
+/// `handle` must be a valid, live `StoreHandle`.
 #[no_mangle]
 pub unsafe extern "C" fn loose_ends_delete_draft(
     handle: *mut StoreHandle,
@@ -798,6 +801,11 @@ pub unsafe extern "C" fn loose_ends_delete_draft(
     }
 }
 
+/// Resolves a commitment and records an optional resolution note.
+///
+/// # Safety
+/// `handle` must be a valid, live `StoreHandle`. `note` may be null or a valid
+/// NUL-terminated C string for the duration of this call.
 #[no_mangle]
 pub unsafe extern "C" fn loose_ends_resolve_commitment(
     handle: *mut StoreHandle,
