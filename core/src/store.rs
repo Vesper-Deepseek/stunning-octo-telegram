@@ -402,9 +402,10 @@ impl Store {
             .query_row(
                 "SELECT entry_source_id FROM draft_commitment WHERE id=?1",
                 params![id],
-                |row| row.get(0),
+                |row| row.get::<_, Option<i64>>(0),
             )
-            .optional()?;
+            .optional()?
+            .flatten();
 
         let deleted = self
             .conn
