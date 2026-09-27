@@ -231,15 +231,18 @@ void main() {
       expect(await LooseEndsBridge.confirmDraft(d), 42);
     });
 
-    test('PlatformException from native returns no fabricated extraction', () async {
+    test('PlatformException from native is surfaced instead of becoming a false empty extraction', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (call) async {
         if (call.method == 'init') return true;
         throw PlatformException(code: 'NATIVE_CRASH', message: 'boom');
       });
       await LooseEndsBridge.init();
-      final drafts = await LooseEndsBridge.ingestText('whatever');
-      expect(drafts, isEmpty);
+
+      await expectLater(
+        LooseEndsBridge.ingestText('whatever'),
+        throwsA(isA<StateError>()),
+      );
     });
   });
 
