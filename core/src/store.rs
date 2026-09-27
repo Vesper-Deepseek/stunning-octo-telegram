@@ -327,9 +327,104 @@ impl Store {
         rows.collect()
     }
 
+    pub fn update_draft_fields(
+        &self,
+        id: i64,
+        description: Option<&str>,
+        direction: Option<ExtractDirection>,
+        expected_date: Option<Option<&str>>,
+        party_guess: Option<Option<&str>>,
+    ) -> rusqlite::Result<()> {
+        let current = self
+            .list_drafts()?
+            .into_iter()
+            .find(|d| d.id == id)
+            .ok_or(rusqlite::Error::QueryReturnedNoRows)?;
+
+        let description = description.unwrap_or(&current.description);
+        let next_direction = direction.unwrap_or(current.direction);
+        let next_date = match expected_date {
+            Some(value) => value.map(str::to_string),
+            None => current.expected_date.clone(),
+        };
+        let next_party = match party_guess {
+            Some(value) => value.map(str::to_string),
+            None => current.party_guess.clone(),
+        };
+
+        let mut confidence: Confidence =
+            serde_json::from_str(&current.confidence_json).unwrap_or_default();
+        if next_party != current.party_guess {
+            confidence.party = Some(FieldConfidence::High);
+        }
+        if next_date != current.expected_date {
+            confidence.date = Some(FieldConfidence::High);
+        }
+        if next_direction != current.direction {
+            confidence.overall = Some(FieldConfidence::High);
+        }
+        let all_fields_high = confidence.party.unwrap_or(FieldConfidence::High)
+            == FieldConfidence::High
+            && confidence.date.unwrap_or(FieldConfidence::High) == FieldConfidence::High
+            && !matches!(next_direction, ExtractDirection::Unclear);
+        confidence.overall = Some(if all_fields_high {
+            FieldConfidence::High
+        } else {
+            FieldConfidence::Low
+        });
+
+        let direction_text = match next_direction {
+            ExtractDirection::UserOwes => DIRECTION_USER_OWES,
+            ExtractDirection::OwedToUser => DIRECTION_OWED_TO_USER,
+            ExtractDirection::Unclear => "unclear",
+        };
+        let confidence_json =
+            serde_json::to_string(&confidence).unwrap_or_else(|_| "{}".into());
+
+        self.conn.execute(
+            "UPDATE draft_commitment SET description=?1, direction=?2, expected_date=?3,
+             party_guess=?4, confidence_json=?5 WHERE id=?6",
+            params![
+                description,
+                direction_text,
+                next_date,
+                next_party,
+                confidence_json,
+                id
+            ],
+        )?;
+        Ok(())
+    }
+
     pub fn delete_draft(&self, id: i64) -> rusqlite::Result<usize> {
-        self.conn
-            .execute("DELETE FROM draft_commitment WHERE id=?1", params![id])
+        let source_id: Option<i64> = self
+            .conn
+            .query_row(
+                "SELECT entry_source_id FROM draft_commitment WHERE id=?1",
+                params![id],
+                |row| row.get(0),
+            )
+            .optional()?;
+
+        let deleted = self
+            .conn
+            .execute("DELETE FROM draft_commitment WHERE id=?1", params![id])?;
+
+        if let Some(source_id) = source_id {
+            self.conn.execute(
+                "DELETE FROM entry_source
+                 WHERE id=?1
+                   AND NOT EXISTS (
+                       SELECT 1 FROM draft_commitment WHERE entry_source_id=?1
+                   )
+                   AND NOT EXISTS (
+                       SELECT 1 FROM edge_derived_from WHERE entry_source_id=?1
+                   )",
+                params![source_id],
+            )?;
+        }
+
+        Ok(deleted)
     }
 
     /// Confirm a draft into a real commitment, applying optional edits.
