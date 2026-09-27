@@ -378,8 +378,7 @@ impl Store {
             ExtractDirection::OwedToUser => DIRECTION_OWED_TO_USER,
             ExtractDirection::Unclear => "unclear",
         };
-        let confidence_json =
-            serde_json::to_string(&confidence).unwrap_or_else(|_| "{}".into());
+        let confidence_json = serde_json::to_string(&confidence).unwrap_or_else(|_| "{}".into());
 
         self.conn.execute(
             "UPDATE draft_commitment SET description=?1, direction=?2, expected_date=?3,

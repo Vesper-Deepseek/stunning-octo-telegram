@@ -314,12 +314,13 @@ mod jni_bridge {
     ) -> jboolean {
         let handle = unsafe { &*(store_ptr as *mut StoreHandle) };
         let desc = jstring_to_optional_string(env, description);
-        let dir = jstring_to_optional_string(env, direction).and_then(|value| match value.as_str() {
-            "user_owes" => Some(models::ExtractDirection::UserOwes),
-            "owed_to_user" => Some(models::ExtractDirection::OwedToUser),
-            "unclear" => Some(models::ExtractDirection::Unclear),
-            _ => None,
-        });
+        let dir =
+            jstring_to_optional_string(env, direction).and_then(|value| match value.as_str() {
+                "user_owes" => Some(models::ExtractDirection::UserOwes),
+                "owed_to_user" => Some(models::ExtractDirection::OwedToUser),
+                "unclear" => Some(models::ExtractDirection::Unclear),
+                _ => None,
+            });
         let date = if expected_date.is_null() {
             Some(None)
         } else {
@@ -790,10 +791,7 @@ pub unsafe extern "C" fn loose_ends_update_draft(
 /// # Safety
 /// `handle` must be a valid, live `StoreHandle`.
 #[no_mangle]
-pub unsafe extern "C" fn loose_ends_delete_draft(
-    handle: *mut StoreHandle,
-    draft_id: i64,
-) -> i32 {
+pub unsafe extern "C" fn loose_ends_delete_draft(handle: *mut StoreHandle, draft_id: i64) -> i32 {
     let handle = unsafe { &*handle };
     match handle.store.delete_draft(draft_id) {
         Ok(count) if count > 0 => 0,
