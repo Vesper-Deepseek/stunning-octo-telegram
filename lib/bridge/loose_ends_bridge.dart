@@ -75,9 +75,9 @@ class LooseEndsBridge {
       return list.cast<Map>().map(_draftFromMap).toList();
     } on PlatformException catch (e) {
       debugPrint('Text extraction failed: ${e.message}');
-      return const [];
+      throw StateError(e.message ?? 'On-device extraction failed.');
     } on MissingPluginException {
-      return const [];
+      throw StateError('Native extraction bridge is unavailable.');
     }
   }
 
