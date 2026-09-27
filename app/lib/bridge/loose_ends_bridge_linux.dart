@@ -14,6 +14,9 @@ class LooseEndsBridgeLinux {
       _looseEndsConfirmDraft;
   static Pointer<Uint8> Function(Pointer<Void>, Pointer<Uint8>, int, int, int)?
       _looseEndsListOpen;
+  static int Function(Pointer<Void>, int, Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>)?
+      _looseEndsUpdateDraft;
+  static int Function(Pointer<Void>, int)? _looseEndsDeleteDraft;
   static int Function(Pointer<Void>, Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>)?
       _looseEndsCreateCommitment;
 
@@ -47,6 +50,16 @@ class LooseEndsBridgeLinux {
         Pointer<Uint8> Function(Pointer<Void>, Pointer<Uint8>, Int32, Int32, Int32),
         Pointer<Uint8> Function(Pointer<Void>, Pointer<Uint8>, int, int, int)>(
         'loose_ends_list_open');
+
+    _looseEndsUpdateDraft = _lib!.lookupFunction<
+        Int32 Function(Pointer<Void>, Int64, Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>),
+        int Function(Pointer<Void>, int, Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>)>(
+        'loose_ends_update_draft');
+
+    _looseEndsDeleteDraft = _lib!.lookupFunction<
+        Int32 Function(Pointer<Void>, Int64),
+        int Function(Pointer<Void>, int)>(
+        'loose_ends_delete_draft');
 
     _looseEndsCreateCommitment = _lib!.lookupFunction<
         Int64 Function(Pointer<Void>, Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>),
@@ -161,6 +174,44 @@ class LooseEndsBridgeLinux {
       };
     }).toList();
     return drafts;
+  }
+
+  static bool updateDraft(
+    Map<String, dynamic> draft, {
+    String? descriptionOverride,
+    String? directionOverride,
+    String? dateOverride,
+    String? partyOverride,
+  }) {
+    _checkStore();
+    final descC = _stringToCString(descriptionOverride ?? draft['description'] as String);
+    final dirC = _stringToCString(directionOverride ?? draft['direction'] as String);
+    final dateC = dateOverride == null
+        ? Pointer<Uint8>.fromAddress(0)
+        : _stringToCString(dateOverride);
+    final partyC = partyOverride == null
+        ? Pointer<Uint8>.fromAddress(0)
+        : _stringToCString(partyOverride);
+
+    final result = _looseEndsUpdateDraft!(
+      _storeHandle!,
+      draft['id'] as int? ?? 0,
+      descC,
+      dirC,
+      dateC,
+      partyC,
+    );
+
+    _freeCString(descC);
+    _freeCString(dirC);
+    if (dateC != Pointer<Uint8>.fromAddress(0)) _freeCString(dateC);
+    if (partyC != Pointer<Uint8>.fromAddress(0)) _freeCString(partyC);
+    return result == 0;
+  }
+
+  static bool deleteDraft(int id) {
+    _checkStore();
+    return _looseEndsDeleteDraft!(_storeHandle!, id) == 0;
   }
 
   static int? confirmDraft(

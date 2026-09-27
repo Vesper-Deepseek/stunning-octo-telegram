@@ -73,6 +73,26 @@ class NativeBridge private constructor() {
         )
     }
 
+    fun updateDraft(
+        draftId: Long,
+        description: String?,
+        direction: String?,
+        expectedDate: String?,
+        party: String?
+    ): Boolean {
+        val handle = store
+        if (handle == 0L) return false
+        return looseEndsUpdateDraft(
+            handle, draftId, description, direction, expectedDate, party
+        )
+    }
+
+    fun deleteDraft(draftId: Long): Boolean {
+        val handle = store
+        if (handle == 0L) return false
+        return looseEndsDeleteDraft(handle, draftId)
+    }
+
     fun listOpen(direction: String, year: Int, month: Int, day: Int): JSONArray? {
         val handle = store
         if (handle == 0L) return null
@@ -152,6 +172,14 @@ class NativeBridge private constructor() {
             description: String?, direction: String?,
             expectedDate: String?, party: String?
         ): Long
+        @JvmStatic private external fun looseEndsUpdateDraft(
+            handle: Long, draftId: Long,
+            description: String?, direction: String?,
+            expectedDate: String?, party: String?
+        ): Boolean
+        @JvmStatic private external fun looseEndsDeleteDraft(
+            handle: Long, draftId: Long
+        ): Boolean
         @JvmStatic private external fun looseEndsListOpen(
             handle: Long, direction: String, year: Int, month: Int, day: Int
         ): String?

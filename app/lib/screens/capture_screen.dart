@@ -69,6 +69,12 @@ class _CaptureScreenState extends State<CaptureScreen> {
           builder: (_) => ReviewScreen(newDrafts: drafts),
         ),
       );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Extraction failed: $e')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

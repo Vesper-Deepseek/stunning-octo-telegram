@@ -18,41 +18,65 @@ class _ReviewScreenState extends State<ReviewScreen> {
   @override
   void initState() {
     super.initState();
-    _drafts = widget.newDrafts ?? [];
-    if (widget.newDrafts == null) {
-      _loadDrafts();
-    }
+    _drafts = List<Draft>.from(widget.newDrafts ?? const <Draft>[]);
+    // Always reload from SQLite. The capture result is only a convenience for
+    // immediate navigation; the database is the source of truth for recovery.
+    _loadDrafts();
   }
 
   Future<void> _loadDrafts() async {
-    final drafts = await LooseEndsBridge.listDrafts();
-    if (mounted) {
-      setState(() => _drafts = drafts);
+    final persisted = await LooseEndsBridge.listDrafts();
+    if (!mounted) return;
+
+    final byId = <int, Draft>{
+      for (final draft in _drafts)
+        if (draft.id > 0) draft.id: draft,
+    };
+    for (final draft in persisted) {
+      byId[draft.id] = draft;
     }
+
+    setState(() {
+      _drafts = byId.values.toList();
+      _drafts.sort((a, b) => a.id.compareTo(b.id));
+    });
   }
 
   Future<void> _confirm(Draft draft) async {
-    final dir = Direction.fromString(draft.direction);
+    var current = draft;
+    var dir = Direction.fromString(current.direction);
     if (dir == Direction.unclear) {
-      await _editDraft(draft);
+      await _editDraft(current);
       if (!mounted) return;
-      final index = _drafts.indexWhere((d) => d.id == draft.id);
-      if (index < 0 || Direction.fromString(_drafts[index].direction) == Direction.unclear) {
-        return;
-      }
-      draft = _drafts[index];
+      final index = _drafts.indexWhere((d) => d.id == current.id);
+      if (index < 0) return;
+      current = _drafts[index];
+      dir = Direction.fromString(current.direction);
+      if (dir == Direction.unclear) return;
     }
 
     setState(() => _busy = true);
-    final id = await LooseEndsBridge.confirmDraft(draft);
-    if (!mounted) return;
-    setState(() {
-      _drafts.removeWhere((d) => d.id == draft.id);
-      _busy = false;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(id != null && id != 0 ? 'Saved' : 'Failed to save')),
-    );
+    try {
+      final id = await LooseEndsBridge.confirmDraft(current);
+      if (!mounted) return;
+
+      if (id != null && id != 0) {
+        setState(() {
+          _drafts.removeWhere((d) => d.id == current.id);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Saved')),
+        );
+      } else {
+        // Never remove a draft after a failed confirmation. The persisted row
+        // remains available for retry instead of becoming a "ghost" draft.
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not save this draft. It was kept for retry.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Future<void> _editDraft(Draft draft) async {
@@ -139,24 +163,60 @@ class _ReviewScreenState extends State<ReviewScreen> {
     if (edited == null || !mounted) return;
     final index = _drafts.indexWhere((d) => d.id == draft.id);
     if (index < 0) return;
+
+    final updatedDescription =
+        edited.description.isEmpty ? draft.description : edited.description;
+    final saved = await LooseEndsBridge.updateDraft(
+      draft,
+      description: updatedDescription,
+      direction: edited.direction,
+      expectedDate: edited.date,
+      party: edited.party,
+    );
+    if (!mounted) return;
+    if (!saved) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not persist the draft changes.')),
+      );
+      return;
+    }
+
     setState(() {
       _drafts[index] = Draft(
         id: draft.id,
-        description: edited.description.isEmpty ? draft.description : edited.description,
+        description: updatedDescription,
         direction: edited.direction.name,
         expectedDate: edited.date,
         party: edited.party,
-        partyConfidence: edited.party == draft.party ? draft.partyConfidence : 'low',
-        dateConfidence: edited.date == draft.expectedDate ? draft.dateConfidence : 'low',
-        overallConfidence: edited.direction == Direction.unclear ? 'low' : draft.overallConfidence,
+        partyConfidence: edited.party == draft.party ? draft.partyConfidence : 'high',
+        dateConfidence: edited.date == draft.expectedDate ? draft.dateConfidence : 'high',
+        overallConfidence: edited.direction == Direction.unclear ? 'low' : (
+          edited.party != draft.party || edited.date != draft.expectedDate
+              ? 'high'
+              : draft.overallConfidence
+        ),
         sourceProvenance: draft.sourceProvenance,
         createdAt: draft.createdAt,
       );
     });
   }
 
-  void _dismiss(Draft draft) {
-    setState(() => _drafts.remove(draft));
+  Future<void> _dismiss(Draft draft) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final deleted = await LooseEndsBridge.deleteDraft(draft);
+      if (!mounted) return;
+      if (deleted) {
+        setState(() => _drafts.removeWhere((d) => d.id == draft.id));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not dismiss this draft.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   @override

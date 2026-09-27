@@ -26,9 +26,17 @@ class MainActivity : FlutterActivity() {
     private var progressSink: EventChannel.EventSink? = null
     private val offlineOcr by lazy { OfflineOcrEngine(applicationContext) }
     private val voiceRecorder by lazy { VoiceRecorder(cacheDir) }
+    private var pendingVoiceStartResult: MethodChannel.Result? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Commitment details are sensitive; keep them out of screenshots and
+        // recent-app thumbnails on supported Android versions.
+        window.setFlags(
+            android.view.WindowManager.LayoutParams.FLAG_SECURE,
+            android.view.WindowManager.LayoutParams.FLAG_SECURE,
+        )
         if (android.os.Build.VERSION.SDK_INT >= 33) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 4243)
         }
@@ -61,17 +69,36 @@ class MainActivity : FlutterActivity() {
                 }
                 "ingestText" -> {
                     val text = call.argument<String>("text") ?: ""
-                    val today = java.time.LocalDate.now()
-                    val model = ModelDownloadManager.selectedModelFile(this)
-                    val json = bridge.extractText(
-                        text,
-                        if (model?.isFile == true) model.absolutePath else null,
-                        call.argument<String>("sourceType") ?: "text",
-                        today.year,
-                        today.monthValue,
-                        today.dayOfMonth
-                    )
-                    result.success(jsonArrayToList(json))
+                    val sourceType = call.argument<String>("sourceType") ?: "text"
+
+                    // llama.cpp may take several seconds. Never run model inference on
+                    // Android's main/UI thread: doing so causes an apparent hang/ANR
+                    // during AI-backed capture even though rule-only capture works.
+                    Thread {
+                        try {
+                            val today = java.time.LocalDate.now()
+                            val model = ModelDownloadManager.selectedModelFile(this)
+                            val json = bridge.extractText(
+                                text,
+                                if (model?.isFile == true) model.absolutePath else null,
+                                sourceType,
+                                today.year,
+                                today.monthValue,
+                                today.dayOfMonth
+                            )
+                            val drafts = jsonArrayToList(json)
+                            runOnUiThread { result.success(drafts) }
+                        } catch (t: Throwable) {
+                            android.util.Log.e("MainActivity", "Capture extraction failed", t)
+                            runOnUiThread {
+                                result.error(
+                                    "extraction_failed",
+                                    t.message ?: "On-device extraction failed.",
+                                    null
+                                )
+                            }
+                        }
+                    }.start()
                 }
                 "pickModel" -> pickCustomModel(result)
                 "modelStatus" -> result.success(ModelDownloadManager.status(this))
@@ -166,6 +193,29 @@ class MainActivity : FlutterActivity() {
                         )
                     )
                 }
+                "updateDraft" -> {
+                    val draftId = call.argument<Number>("draftId")?.toLong()
+                        ?: return@setMethodCallHandler result.error("bad_args", "draftId required", null)
+                    val direction = call.argument<String>("direction")
+                        ?: return@setMethodCallHandler result.error("bad_args", "direction required", null)
+                    if (direction !in setOf("user_owes", "owed_to_user", "unclear")) {
+                        return@setMethodCallHandler result.error("bad_args", "invalid direction", null)
+                    }
+                    result.success(
+                        bridge.updateDraft(
+                            draftId,
+                            call.argument<String>("description"),
+                            direction,
+                            call.argument<String>("expected_date"),
+                            call.argument<String>("party")
+                        )
+                    )
+                }
+                "deleteDraft" -> {
+                    val draftId = call.argument<Number>("draftId")?.toLong()
+                        ?: return@setMethodCallHandler result.error("bad_args", "draftId required", null)
+                    result.success(bridge.deleteDraft(draftId))
+                }
                 "listOpen" -> {
                     val dir = call.argument<String>("direction") ?: "user_owes"
                     val today = java.time.LocalDate.now()
@@ -240,11 +290,22 @@ class MainActivity : FlutterActivity() {
         if (android.os.Build.VERSION.SDK_INT >= 23 &&
             checkSelfPermission(Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED
         ) {
+            if (pendingVoiceStartResult != null) {
+                result.error("busy", "Microphone permission request is already in progress.", null)
+                return
+            }
+            // Keep the Dart call alive until Android returns the permission result.
+            // Previously we returned an error immediately, so granting the permission
+            // still left the recorder stopped and the user had to retry manually.
+            pendingVoiceStartResult = result
             requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 4245)
-            result.error("permission_required", "Microphone permission is required. Tap the record button again after granting it.", null)
             return
         }
 
+        startVoiceRecordingNow(result)
+    }
+
+    private fun startVoiceRecordingNow(result: MethodChannel.Result) {
         Thread {
             try {
                 voiceRecorder.start()
@@ -253,6 +314,31 @@ class MainActivity : FlutterActivity() {
                 runOnUiThread { result.error("recording_failed", e.message, null) }
             }
         }.start()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != 4245) return
+
+        val pending = pendingVoiceStartResult
+        pendingVoiceStartResult = null
+        if (pending == null) return
+
+        val granted = grantResults.isNotEmpty() &&
+            grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (granted) {
+            startVoiceRecordingNow(pending)
+        } else {
+            pending.error(
+                "permission_denied",
+                "Microphone permission was denied. Voice capture remains disabled.",
+                null,
+            )
+        }
     }
 
     private fun transcribeVoice(wavPath: String?, result: MethodChannel.Result) {
@@ -274,7 +360,10 @@ class MainActivity : FlutterActivity() {
 
         Thread {
             try {
-                val text = VoiceNative.transcribeWav(
+                // The native library exports the JNI symbol for VoiceNativeBridge.
+                // Use that class consistently; VoiceNative previously referenced a
+                // different library/symbol pair and always returned null.
+                val text = VoiceNativeBridge.getInstance().transcribeWav(
                     wav.absolutePath,
                     model.absolutePath
                 )
@@ -296,6 +385,12 @@ class MainActivity : FlutterActivity() {
     override fun onDestroy() {
         voiceRecorder.cancel()
         offlineOcr.release()
+        pendingVoiceStartResult?.error(
+            "activity_destroyed",
+            "Voice permission request was interrupted by closing the activity.",
+            null,
+        )
+        pendingVoiceStartResult = null
         super.onDestroy()
     }
 
@@ -358,9 +453,16 @@ class MainActivity : FlutterActivity() {
                         val text = offlineOcr.recognize(image)
                         image.delete()
                         runOnUiThread { result.success(text) }
-                    } catch (e: Exception) {
+                    } catch (t: Throwable) {
                         image.delete()
-                        runOnUiThread { result.error("ocr_failed", e.message, null) }
+                        android.util.Log.e("MainActivity", "Screenshot OCR failed", t)
+                        runOnUiThread {
+                            result.error(
+                                "ocr_failed",
+                                t.message ?: "On-device OCR failed.",
+                                null,
+                            )
+                        }
                     }
                 }.start()
             }
