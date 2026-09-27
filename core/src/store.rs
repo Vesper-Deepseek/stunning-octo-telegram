@@ -321,7 +321,7 @@ impl Store {
                 created_at: r.get(5)?,
                 source_provenance: provenance_from(r.get::<_, String>(6)?.as_str()),
                 confidence_json: r.get(7)?,
-                entry_source_id: r.get(8)?,
+                entry_source_id: r.get::<_, Option<i64>>(8)?,
             })
         })?;
         rows.collect()
