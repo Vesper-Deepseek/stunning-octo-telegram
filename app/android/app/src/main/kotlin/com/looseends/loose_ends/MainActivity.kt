@@ -193,6 +193,29 @@ class MainActivity : FlutterActivity() {
                         )
                     )
                 }
+                "updateDraft" -> {
+                    val draftId = call.argument<Number>("draftId")?.toLong()
+                        ?: return@setMethodCallHandler result.error("bad_args", "draftId required", null)
+                    val direction = call.argument<String>("direction")
+                        ?: return@setMethodCallHandler result.error("bad_args", "direction required", null)
+                    if (direction !in setOf("user_owes", "owed_to_user", "unclear")) {
+                        return@setMethodCallHandler result.error("bad_args", "invalid direction", null)
+                    }
+                    result.success(
+                        bridge.updateDraft(
+                            draftId,
+                            call.argument<String>("description"),
+                            direction,
+                            call.argument<String>("expected_date"),
+                            call.argument<String>("party")
+                        )
+                    )
+                }
+                "deleteDraft" -> {
+                    val draftId = call.argument<Number>("draftId")?.toLong()
+                        ?: return@setMethodCallHandler result.error("bad_args", "draftId required", null)
+                    result.success(bridge.deleteDraft(draftId))
+                }
                 "listOpen" -> {
                     val dir = call.argument<String>("direction") ?: "user_owes"
                     val today = java.time.LocalDate.now()
