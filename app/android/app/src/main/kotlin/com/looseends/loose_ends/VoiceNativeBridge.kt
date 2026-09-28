@@ -21,11 +21,11 @@ class VoiceNativeBridge private constructor() {
     companion object {
         init {
             try {
-                System.loadLibrary("loose_ends_voice_native")
+                System.loadLibrary("loose_ends_voice")
             } catch (e: UnsatisfiedLinkError) {
                 android.util.Log.e(
                     "VoiceNativeBridge",
-                    "Failed to load Whisper native library; voice remains unavailable",
+                    "Failed to load Whisper native library (libloose_ends_voice.so); voice remains unavailable",
                     e
                 )
             }
