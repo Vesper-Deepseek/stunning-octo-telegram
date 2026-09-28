@@ -47,6 +47,7 @@ void main() {
       300,
       scrollable: manualScrollable,
     );
+    await tester.pumpAndSettle();
     expect(saveButton, findsOneWidget);
     await tester.tap(saveButton);
     await tester.pumpAndSettle();
@@ -59,6 +60,7 @@ void main() {
       300,
       scrollable: homeScrollable,
     );
+    await tester.pumpAndSettle();
     await tester.tap(owedToYouHome);
     await tester.pumpAndSettle();
     expect(find.text('Rosa will send the photos'), findsOneWidget);
