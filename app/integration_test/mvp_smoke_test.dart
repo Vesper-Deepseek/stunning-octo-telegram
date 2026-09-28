@@ -36,22 +36,44 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(manualFields.at(1), 'Rosa');
     await tester.enterText(manualFields.at(2), '2030-01-01');
-    await tester.tap(find.byKey(const ValueKey('manual-save-commitment')));
+
+    // The form is a ListView, so the lower save button may not be built
+    // until the scroll position reaches it. Constrain scrolling to the
+    // active Scrollable because the test tree can contain more than one.
+    final manualScrollable = find.byType(Scrollable).first;
+    final saveButton = find.byKey(const ValueKey('manual-save-commitment'));
+    await tester.scrollUntilVisible(
+      saveButton,
+      300,
+      scrollable: manualScrollable,
+    );
+    expect(saveButton, findsOneWidget);
+    await tester.tap(saveButton);
     await tester.pumpAndSettle();
 
     expect(find.text('Intellex'), findsOneWidget);
     final owedToYouHome = find.text('Owed to You');
-    await tester.scrollUntilVisible(owedToYouHome, 300);
+    final homeScrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      owedToYouHome,
+      300,
+      scrollable: homeScrollable,
+    );
     await tester.tap(owedToYouHome);
     await tester.pumpAndSettle();
     expect(find.text('Rosa will send the photos'), findsOneWidget);
     expect(find.text('Party: Rosa'), findsOneWidget);
     expect(find.text('Due: 2030-01-01'), findsOneWidget);
-    expect(find.widgetWithIcon(IconButton, Icons.notifications_none), findsOneWidget);
+    expect(
+      find.widgetWithIcon(IconButton, Icons.notifications_none),
+      findsOneWidget,
+    );
     await tester.tap(find.byTooltip('Set reminder'));
     await tester.pumpAndSettle();
     expect(find.text('Reminder scheduled.'), findsOneWidget);
-    await tester.tap(find.widgetWithIcon(IconButton, Icons.check_circle_outline));
+    await tester.tap(
+      find.widgetWithIcon(IconButton, Icons.check_circle_outline),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Rosa will send the photos'), findsNothing);
     await tester.pageBack();
@@ -116,7 +138,10 @@ void main() {
 
     await tester.tap(find.text('Capture'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'I need to call Daniel tomorrow');
+    await tester.enterText(
+      find.byType(TextField),
+      'I need to call Daniel tomorrow',
+    );
     await tester.tap(find.text('Extract'));
     await tester.pumpAndSettle(const Duration(seconds: 2));
     expect(find.textContaining('call Daniel'), findsOneWidget);

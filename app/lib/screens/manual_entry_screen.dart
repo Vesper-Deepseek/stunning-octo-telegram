@@ -69,12 +69,12 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
             ),
             items: const [
               DropdownMenuItem(
-                key: const ValueKey('manual-direction-you-owe'),
+                key: ValueKey('manual-direction-you-owe'),
                 value: Direction.userOwes,
                 child: Text('You Owe'),
               ),
               DropdownMenuItem(
-                key: const ValueKey('manual-direction-owed-to-you'),
+                key: ValueKey('manual-direction-owed-to-you'),
                 value: Direction.owedToUser,
                 child: Text('Owed to You'),
               ),
