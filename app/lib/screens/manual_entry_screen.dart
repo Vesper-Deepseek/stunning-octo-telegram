@@ -69,10 +69,12 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
             ),
             items: const [
               DropdownMenuItem(
+                key: const ValueKey('manual-direction-you-owe'),
                 value: Direction.userOwes,
                 child: Text('You Owe'),
               ),
               DropdownMenuItem(
+                key: const ValueKey('manual-direction-owed-to-you'),
                 value: Direction.owedToUser,
                 child: Text('Owed to You'),
               ),
@@ -100,6 +102,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
           ),
           const SizedBox(height: 20),
           FilledButton.icon(
+            key: const ValueKey('manual-save-commitment'),
             onPressed: _saving ? null : _save,
             icon: const Icon(Icons.save),
             label: Text(_saving ? 'Saving…' : 'Save commitment'),
