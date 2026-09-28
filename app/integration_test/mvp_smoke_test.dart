@@ -38,15 +38,14 @@ void main() {
     await tester.enterText(manualFields.at(2), '2030-01-01');
 
     // The form is a ListView, so the lower save button may not be built
-    // until the scroll position reaches it. Constrain the scrollable finder
-    // because the Flutter test tree can contain more than one Scrollable.
-    final manualList = find.byType(ListView);
-    expect(manualList, findsOneWidget);
+    // until the scroll position reaches it. Constrain scrolling to the
+    // active Scrollable because the test tree can contain more than one.
+    final manualScrollable = find.byType(Scrollable).first;
     final saveButton = find.text('Save commitment');
     await tester.scrollUntilVisible(
       saveButton,
       300,
-      scrollable: manualList,
+      scrollable: manualScrollable,
     );
     expect(saveButton, findsOneWidget);
     await tester.tap(saveButton);
@@ -54,12 +53,11 @@ void main() {
 
     expect(find.text('Intellex'), findsOneWidget);
     final owedToYouHome = find.text('Owed to You');
-    final homeList = find.byType(ListView);
-    expect(homeList, findsOneWidget);
+    final homeScrollable = find.byType(Scrollable).first;
     await tester.scrollUntilVisible(
       owedToYouHome,
       300,
-      scrollable: homeList,
+      scrollable: homeScrollable,
     );
     await tester.tap(owedToYouHome);
     await tester.pumpAndSettle();
