@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: android-emulator-smoke-main
+  group: android-emulator-smoke-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 
