@@ -32,11 +32,11 @@ void main() {
     await tester.enterText(manualFields.at(0), 'Rosa will send the photos');
     await tester.tap(find.byType(DropdownButtonFormField<Direction>));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Owed to You').last);
+    await tester.tap(find.byKey(const ValueKey('manual-direction-owed-to-you')));
     await tester.pumpAndSettle();
     await tester.enterText(manualFields.at(1), 'Rosa');
     await tester.enterText(manualFields.at(2), '2030-01-01');
-    await tester.tap(find.text('Save commitment'));
+    await tester.tap(find.byKey(const ValueKey('manual-save-commitment')));
     await tester.pumpAndSettle();
 
     expect(find.text('Intellex'), findsOneWidget);
