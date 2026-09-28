@@ -138,3 +138,10 @@ tasks.matching { it.name == "mergeReleaseNativeLibs" }.configureEach {
         }
     }
 }
+
+
+afterEvaluate {
+    tasks.matching { it.name == "preBuild" }.configureEach {
+        dependsOn("extractOpenCvNativeLibs")
+    }
+}

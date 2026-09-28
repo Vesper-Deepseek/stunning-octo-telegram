@@ -106,9 +106,13 @@ object ModelDownloadManager {
         val selected = prefs(context).getString(SELECTED_MODEL, null) ?: return null
         return when (selected) {
             CUSTOM_ID -> File(modelDir(context), "custom-import.gguf").takeIf { it.isFile }
-            else -> catalog.firstOrNull { it.id == selected }?.let {
-                File(modelDir(context), it.fileName)
-            }?.takeIf { it.isFile }
+            else -> catalog.firstOrNull { it.id == selected }?.let { spec ->
+                File(modelDir(context), spec.fileName).takeIf { file ->
+                    file.isFile &&
+                        file.length() == spec.sizeBytes &&
+                        sha256(file).equals(spec.sha256, ignoreCase = true)
+                }
+            }
         }
     }
 
