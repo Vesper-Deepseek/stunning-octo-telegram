@@ -57,7 +57,13 @@ object VoiceModelManager {
     fun selectedModelFile(context: Context): File? {
         val selected = prefs(context).getString(SELECTED, null)
         if (selected != MODEL_ID) return null
-        return modelFile(context).takeIf { it.isFile }
+        val file = modelFile(context)
+        // Never hand native Whisper an unverified/stale model file.
+        return file.takeIf {
+            it.isFile &&
+                it.length() == SIZE_BYTES &&
+                sha256(it).equals(SHA256, ignoreCase = true)
+        }
     }
 
     fun startDownload(
