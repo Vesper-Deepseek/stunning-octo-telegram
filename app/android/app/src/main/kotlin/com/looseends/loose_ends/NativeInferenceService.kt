@@ -35,9 +35,14 @@ class NativeInferenceService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val kind = intent?.getStringExtra(EXTRA_KIND)
-        val path = intent?.getStringExtra(EXTRA_PATH)
-        val model = intent?.getStringExtra(EXTRA_MODEL)
+        if (intent == null) {
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
+
+        val kind = intent.getStringExtra(EXTRA_KIND)
+        val path = intent.getStringExtra(EXTRA_PATH)
+        val model = intent.getStringExtra(EXTRA_MODEL)
         val receiver = receiverFrom(intent)
 
         if (kind.isNullOrBlank() || path.isNullOrBlank() || receiver == null) {
