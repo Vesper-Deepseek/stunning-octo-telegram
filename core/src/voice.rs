@@ -59,10 +59,12 @@ fn verify_ggml_model(path: &Path) -> Result<u64, String> {
         .map_err(|e| format!("model open: {e}"))?
         .read_exact(&mut header)
         .map_err(|e| format!("model header read: {e}"))?;
-    // whisper.cpp GGML "too" version 1..3 little-endian magic values.
-    const MAGICS: [u32; 4] = [0x6d6c6474, 0x6d6c6774, 0x6d6c6f74, 0x746f6f67];
+    // whisper.cpp writes GGML_FILE_MAGIC = 0x67676d6c in native
+    // integer order; the on-disk little-endian bytes are "lmgg".
+    // The official ggml-tiny.en-q5_1.bin uses this magic.
+    const GGML_FILE_MAGIC: u32 = 0x67676d6c;
     let magic = u32::from_le_bytes([header[0], header[1], header[2], header[3]]);
-    if !MAGICS.contains(&magic) {
+    if magic != GGML_FILE_MAGIC {
         return Err(format!(
             "Whisper model is not a GGML file (magic 0x{magic:08x}); re-download the model"
         ));
