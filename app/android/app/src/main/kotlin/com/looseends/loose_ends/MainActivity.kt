@@ -399,6 +399,9 @@ class MainActivity : FlutterActivity() {
 
         inferenceExecutor.execute {
             try {
+                // OCR keeps native ONNX/OpenCV sessions resident for reuse. Release
+                // them before Whisper so the two native model sets never overlap.
+                offlineOcr.release()
                 // The native library exports JNI symbols for both VoiceNativeBridge
                 // and VoiceNative; use the bridge class consistently.
                 val text = VoiceNativeBridge.getInstance().transcribeWav(
