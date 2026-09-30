@@ -11,6 +11,8 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -27,6 +29,17 @@ class MainActivity : FlutterActivity() {
     private val offlineOcr by lazy { OfflineOcrEngine(applicationContext) }
     private val voiceRecorder by lazy { VoiceRecorder(cacheDir) }
     private var pendingVoiceStartResult: MethodChannel.Result? = null
+
+    // Single-worker executor for all native AI inference (llama.cpp,
+    // whisper.cpp, ONNX/OpenCV). Replaces the previous raw `Thread{}.start()`
+    // calls, which could run multiple heavy inferences concurrently and blow
+    // up device RAM (OOM-killer force-close), and never bounded thread count.
+    // Inference is strictly serialized so only one model is resident at a
+    // time; results are posted back with runOnUiThread, never on this worker.
+    private val inferenceExecutor: ExecutorService =
+        Executors.newSingleThreadExecutor { runnable ->
+            Thread(runnable, "loose-ends-inference").apply { isDaemon = true }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,7 +87,7 @@ class MainActivity : FlutterActivity() {
                     // llama.cpp may take several seconds. Never run model inference on
                     // Android's main/UI thread: doing so causes an apparent hang/ANR
                     // during AI-backed capture even though rule-only capture works.
-                    Thread {
+                    inferenceExecutor.execute {
                         try {
                             val today = java.time.LocalDate.now()
                             val model = ModelDownloadManager.selectedModelFile(this)
@@ -98,7 +111,7 @@ class MainActivity : FlutterActivity() {
                                 )
                             }
                         }
-                    }.start()
+                    }
                 }
                 "pickModel" -> pickCustomModel(result)
                 "modelStatus" -> result.success(ModelDownloadManager.status(this))
@@ -306,14 +319,14 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun startVoiceRecordingNow(result: MethodChannel.Result) {
-        Thread {
+        inferenceExecutor.execute {
             try {
                 voiceRecorder.start()
                 runOnUiThread { result.success(true) }
             } catch (e: Exception) {
                 runOnUiThread { result.error("recording_failed", e.message, null) }
             }
-        }.start()
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -357,12 +370,37 @@ class MainActivity : FlutterActivity() {
             result.error("voice_model_missing", "Download the Whisper voice model before recording.", null)
             return
         }
+        // Fail fast and gracefully if libloose_ends_voice.so was never packaged
+        // or failed to load, instead of letting the external call throw.
+        if (!VoiceNativeBridge.isAvailable()) {
+            wav.delete()
+            result.error(
+                "voice_unavailable",
+                "The Whisper native library is missing from this build; rebuild with scripts/build-android.sh.",
+                null,
+            )
+            return
+        }
+        // OOM pre-flight before any whisper.cpp/ggml allocation: ggml's C++
+        // `operator new` failure aborts the process (SIGABRT) with no
+        // catchable exception, so an under-backed device must be refused up
+        // front with a recoverable error instead.
+        val peakMb = MemoryGuard.estimatedWhisperPeakMb(model.length())
+        if (MemoryGuard.wouldExceedMemoryBudget(this, peakMb)) {
+            wav.delete()
+            result.error(
+                "insufficient_memory",
+                "Not enough free memory for offline transcription (~$peakMb MB needed). " +
+                    "Close other apps and try again.",
+                null,
+            )
+            return
+        }
 
-        Thread {
+        inferenceExecutor.execute {
             try {
-                // The native library exports the JNI symbol for VoiceNativeBridge.
-                // Use that class consistently; VoiceNative previously referenced a
-                // different library/symbol pair and always returned null.
+                // The native library exports JNI symbols for both VoiceNativeBridge
+                // and VoiceNative; use the bridge class consistently.
                 val text = VoiceNativeBridge.getInstance().transcribeWav(
                     wav.absolutePath,
                     model.absolutePath
@@ -375,16 +413,30 @@ class MainActivity : FlutterActivity() {
                 } else {
                     runOnUiThread { result.success(text) }
                 }
-            } catch (e: Exception) {
+            } catch (t: Throwable) {
+                // Throwable, not Exception: UnsatisfiedLinkError and any other
+                // bridge failure must surface as a Dart-side error, never as an
+                // uncaught exception on the worker thread (which kills the app).
                 wav.delete()
-                runOnUiThread { result.error("transcription_failed", e.message, null) }
+                android.util.Log.e("MainActivity", "Whisper transcription crashed", t)
+                runOnUiThread {
+                    val message = when (t) {
+                        is OutOfMemoryError ->
+                            "Not enough memory to run Whisper on this device. Close other apps and retry."
+                        else -> t.message ?: "Offline Whisper transcription failed."
+                    }
+                    result.error("transcription_failed", message, null)
+                }
             }
-        }.start()
+        }
     }
 
     override fun onDestroy() {
         voiceRecorder.cancel()
         offlineOcr.release()
+        // Stop accepting new inference work; running jobs finish or are
+        // cancelled rather than leaking threads across activity recreation.
+        inferenceExecutor.shutdownNow()
         pendingVoiceStartResult?.error(
             "activity_destroyed",
             "Voice permission request was interrupted by closing the activity.",
@@ -443,7 +495,7 @@ class MainActivity : FlutterActivity() {
                     result.success(null)
                     return
                 }
-                Thread {
+                inferenceExecutor.execute {
                     val image = java.io.File.createTempFile("loose-ends-ocr-", ".image", cacheDir)
                     try {
                         contentResolver.openInputStream(uri).use { input ->
@@ -454,17 +506,25 @@ class MainActivity : FlutterActivity() {
                         image.delete()
                         runOnUiThread { result.success(text) }
                     } catch (t: Throwable) {
+                        // Throwable: OutOfMemoryError from ONNX/OpenCV and any
+                        // native-side Java exception must become a Dart error,
+                        // not an uncaught worker-thread crash.
                         image.delete()
                         android.util.Log.e("MainActivity", "Screenshot OCR failed", t)
                         runOnUiThread {
+                            val message = when (t) {
+                                is OutOfMemoryError ->
+                                    "Not enough memory to run OCR on this image. Free device memory and retry."
+                                else -> t.message ?: "On-device OCR failed."
+                            }
                             result.error(
                                 "ocr_failed",
-                                t.message ?: "On-device OCR failed.",
+                                message,
                                 null,
                             )
                         }
                     }
-                }.start()
+                }
             }
             customModelPickRequestCode -> {
                 val result = pendingCustomModelResult
@@ -475,7 +535,7 @@ class MainActivity : FlutterActivity() {
                     result.success(null)
                     return
                 }
-                Thread {
+                inferenceExecutor.execute {
                     try {
                         val imported = ModelDownloadManager.importCustomModel(this, uri)
                         runOnUiThread { result.success(imported) }
@@ -484,7 +544,7 @@ class MainActivity : FlutterActivity() {
                             result.error("model_import_failed", e.message, null)
                         }
                     }
-                }.start()
+                }
             }
             else -> super.onActivityResult(requestCode, resultCode, data)
         }

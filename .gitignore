@@ -1,31 +1,6 @@
-```
-# Gradle
-.gradle/
+# Rust build artifacts
+target/
+
+# Android build artifacts
+*.gradle/
 build/
-!gradle/wrapper/gradle-wrapper.jar
-
-# Android
-*.apk
-*.aar
-*.ap_
-local.properties
-captures/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Logs
-*.log
-
-# Environment
-.env
-.env.local
-*.env.*
-
-# Dependencies
-node_modules/
-**/node_modules/
-```

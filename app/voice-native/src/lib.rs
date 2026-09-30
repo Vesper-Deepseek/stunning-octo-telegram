@@ -1,4 +1,5 @@
 use std::ffi::{CStr, CString};
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::ptr;
 
 use jni_sys::{jboolean, jclass, jstring, JNIEnv};
@@ -29,9 +30,32 @@ unsafe extern "C" fn native_loose_ends_transcribe_wav(
     let wav = jstring_to_optional_string(env, wav_path).unwrap_or_default();
     let model = jstring_to_optional_string(env, model_path).unwrap_or_default();
     if wav.trim().is_empty() || model.trim().is_empty() { return ptr::null_mut(); }
-    match loose_ends_core::voice::transcribe_wav(wav, model) {
-        Ok(text) => string_to_jstring(env, &text),
-        Err(_) => ptr::null_mut(),
+
+    // whisper.cpp / ggml allocate large buffers and raise C++ exceptions
+    // (std::bad_alloc on low-memory devices) or abort on corrupt weights.
+    // A Rust panic unwinding across an `extern "C"` boundary is itself UB
+    // and immediately aborts the process (SIGABRT force-close), so every
+    // native call must be wrapped in catch_unwind and degraded to a null
+    // return that Kotlin turns into a recoverable channel error.
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        loose_ends_core::voice::transcribe_wav(wav, model)
+    }));
+
+    match result {
+        Ok(Ok(text)) => string_to_jstring(env, &text),
+        Ok(Err(err)) => {
+            eprintln!("[loose_ends_voice] transcription failed: {err}");
+            ptr::null_mut()
+        }
+        Err(panic) => {
+            let detail = panic
+                .downcast_ref::<String>()
+                .cloned()
+                .or_else(|| panic.downcast_ref::<&str>().map(|s| s.to_string()))
+                .unwrap_or_else(|| "unknown panic".to_string());
+            eprintln!("[loose_ends_voice] caught native panic, returning null instead of crashing: {detail}");
+            ptr::null_mut()
+        }
     }
 }
 
@@ -45,6 +69,24 @@ unsafe extern "C" fn native_loose_ends_transcribe_wav(
 /// and the string handles must remain valid for the duration of the call.
 #[no_mangle]
 pub unsafe extern "C" fn Java_com_looseends_loose_1ends_VoiceNativeBridge_looseEndsTranscribeWav(
+    env: JNIEnv,
+    class: jclass,
+    wav_path: jstring,
+    model_path: jstring,
+) -> jstring {
+    native_loose_ends_transcribe_wav(env, class, wav_path, model_path)
+}
+
+/// JNI name-based export for the `VoiceNative` object.
+///
+/// Without this symbol, any caller that still references `VoiceNative`
+/// throws UnsatisfiedLinkError; combined with a missing .so in jniLibs it
+/// previously force-closed the app the moment voice recognition started.
+///
+/// # Safety
+/// Same JNI contract as the VoiceNativeBridge export above.
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_looseends_loose_1ends_VoiceNative_looseEndsTranscribeWav(
     env: JNIEnv,
     class: jclass,
     wav_path: jstring,

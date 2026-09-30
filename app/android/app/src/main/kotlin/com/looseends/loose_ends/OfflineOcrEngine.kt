@@ -89,6 +89,19 @@ class OfflineOcrEngine(private val context: Context) {
 
     private fun ensureLoaded() {
         if (detSession != null && recSession != null && characters.isNotEmpty()) return
+
+        // The OpenCV AAR ships libopencv_java4.so; loading it eagerly would
+        // throw UnsatisfiedLinkError and force-close the app before OCR even
+        // starts. Guard the load so failure surfaces as a recoverable error.
+        try {
+            System.loadLibrary("opencv_java4")
+        } catch (e: UnsatisfiedLinkError) {
+            throw IllegalStateException(
+                "OpenCV native library is unavailable on this device ABI; OCR is disabled.",
+                e,
+            )
+        }
+
         val det = OcrModelManager.detFile(context)
             ?: throw IllegalStateException("OCR detection model is not downloaded and verified.")
         val rec = OcrModelManager.recFile(context)
@@ -96,19 +109,85 @@ class OfflineOcrEngine(private val context: Context) {
         val dict = OcrModelManager.dictFile(context)
             ?: throw IllegalStateException("OCR dictionary is not downloaded and verified.")
 
-        System.loadLibrary("opencv_java4")
+        // Explicit pre-flight file verification: readable, non-empty ONNX
+        // models. sha256 was already enforced by OcrModelManager.isVerified;
+        // this guards against files deleted/corrupted after verification.
+        verifyModelFile(det, "detection")
+        verifyModelFile(rec, "recognition")
+        if (!dict.isFile || dict.length() == 0L) {
+            throw IllegalStateException("OCR dictionary file is empty or unreadable.")
+        }
+
+        // Device-memory pre-flight: ONNX Runtime allocates the graphs in
+        // native RAM, not on the Java heap, so a heap check alone never sees
+        // the condition that makes its C++ `new` abort the process. Refuse
+        // with a recoverable error when MemAvailable cannot back both models.
+        val modelBytes = det.length() + rec.length()
+        if (MemoryGuard.wouldExceedMemoryBudget(context, MemoryGuard.estimatedOcrPeakMb(det.length(), rec.length()))) {
+            throw OutOfMemoryError(
+                "Not enough device memory to load OCR models (~${MemoryGuard.estimatedOcrPeakMb(det.length(), rec.length())} MB needed). " +
+                    "Close other apps and retry.",
+            )
+        }
+        // Secondary guard for the Java-side copies of the model bytes.
+        val rt = Runtime.getRuntime()
+        val usableHeapMb = (rt.maxMemory() - (rt.totalMemory() - rt.freeMemory())) / (1024L * 1024L)
+        if (modelBytes / (1024 * 1024) > rt.maxMemory() / (1024L * 1024L) / 2 || usableHeapMb < 96) {
+            throw OutOfMemoryError(
+                "Not enough memory to load OCR models (~${modelBytes / (1024 * 1024)} MB needed, " +
+                    "${usableHeapMb} MB free of ${rt.maxMemory() / (1024L * 1024L)} MB heap). Close other apps and retry.",
+            )
+        }
+
         env = OrtEnvironment.getEnvironment()
+        // ALL_OPT runs heavy graph optimizations at createSession time and has
+        // caused native crashes/hangs on low-end ARM devices; BASIC_OPT is the
+        // stable default. Intra-op threads are sized from the core count.
         val options = OrtSession.SessionOptions().apply {
-            setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)
-            setIntraOpNumThreads(4)
+            setOptimizationLevel(OrtSession.SessionOptions.OptLevel.BASIC_OPT)
+            setIntraOpNumThreads(MemoryGuard.recommendedThreads())
         }
         try {
             val e = env ?: error("ONNX Runtime environment unavailable.")
             detSession = e.createSession(det.readBytes(), options)
             recSession = e.createSession(rec.readBytes(), options)
             characters = dict.readLines(Charsets.UTF_8).filter { it.isNotEmpty() } + listOf(" ")
+        } catch (oom: OutOfMemoryError) {
+            // Half-loaded sessions must be released or every retry OOMs again.
+            release()
+            val wrapped = OutOfMemoryError(
+                "ONNX Runtime could not allocate memory for the OCR models; " +
+                    "free device memory and try again.",
+            )
+            wrapped.initCause(oom)
+            throw wrapped
+        } catch (ortFailure: ai.onnxruntime.OrtException) {
+            // OrtException wraps native allocation failures and invalid
+            // graphs; previously it propagated as an unhandled crash source.
+            release()
+            throw IllegalStateException(
+                "Failed to initialize the OCR engine: ${ortFailure.message ?: "native ONNX error"}",
+                ortFailure,
+            )
+        } catch (e: Throwable) {
+            release()
+            throw e
         } finally {
             options.close()
+        }
+    }
+
+    private fun verifyModelFile(file: File, label: String) {
+        if (!file.isFile) {
+            throw IllegalStateException("OCR $label model file is missing; re-download the models.")
+        }
+        if (file.length() < 1024) {
+            throw IllegalStateException(
+                "OCR $label model file is truncated (${file.length()} bytes); re-download the models.",
+            )
+        }
+        if (!file.canRead()) {
+            throw IllegalStateException("OCR $label model file is not readable (permission denied).")
         }
     }
 
