@@ -22,10 +22,11 @@ object VoiceNative {
 
     fun transcribeWav(wavPath: String, modelPath: String): String? {
         if (wavPath.isBlank() || modelPath.isBlank()) return null
+        // catch(Throwable) so no native bridge failure can force-close the app.
         return try {
             looseEndsTranscribeWav(wavPath, modelPath)
-        } catch (e: UnsatisfiedLinkError) {
-            android.util.Log.e("VoiceNative", "Whisper native method unavailable", e)
+        } catch (t: Throwable) {
+            android.util.Log.e("VoiceNative", "Whisper native call failed", t)
             null
         }
     }

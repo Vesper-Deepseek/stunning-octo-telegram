@@ -7,10 +7,16 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.ResultReceiver
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -27,6 +33,18 @@ class MainActivity : FlutterActivity() {
     private val offlineOcr by lazy { OfflineOcrEngine(applicationContext) }
     private val voiceRecorder by lazy { VoiceRecorder(cacheDir) }
     private var pendingVoiceStartResult: MethodChannel.Result? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    // Single-worker executor for all native AI inference (llama.cpp,
+    // whisper.cpp, ONNX/OpenCV). Replaces the previous raw `Thread{}.start()`
+    // calls, which could run multiple heavy inferences concurrently and blow
+    // up device RAM (OOM-killer force-close), and never bounded thread count.
+    // Inference is strictly serialized so only one model is resident at a
+    // time; results are posted back with runOnUiThread, never on this worker.
+    private val inferenceExecutor: ExecutorService =
+        Executors.newSingleThreadExecutor { runnable ->
+            Thread(runnable, "loose-ends-inference").apply { isDaemon = true }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,7 +92,7 @@ class MainActivity : FlutterActivity() {
                     // llama.cpp may take several seconds. Never run model inference on
                     // Android's main/UI thread: doing so causes an apparent hang/ANR
                     // during AI-backed capture even though rule-only capture works.
-                    Thread {
+                    inferenceExecutor.execute {
                         try {
                             val today = java.time.LocalDate.now()
                             val model = ModelDownloadManager.selectedModelFile(this)
@@ -98,7 +116,7 @@ class MainActivity : FlutterActivity() {
                                 )
                             }
                         }
-                    }.start()
+                    }
                 }
                 "pickModel" -> pickCustomModel(result)
                 "modelStatus" -> result.success(ModelDownloadManager.status(this))
@@ -306,14 +324,14 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun startVoiceRecordingNow(result: MethodChannel.Result) {
-        Thread {
+        inferenceExecutor.execute {
             try {
                 voiceRecorder.start()
                 runOnUiThread { result.success(true) }
             } catch (e: Exception) {
                 runOnUiThread { result.error("recording_failed", e.message, null) }
             }
-        }.start()
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -357,34 +375,120 @@ class MainActivity : FlutterActivity() {
             result.error("voice_model_missing", "Download the Whisper voice model before recording.", null)
             return
         }
+        // Fail fast and gracefully if libloose_ends_voice.so was never packaged
+        // or failed to load, instead of letting the external call throw.
+        if (!VoiceNativeBridge.isAvailable()) {
+            wav.delete()
+            result.error(
+                "voice_unavailable",
+                "The Whisper native library is missing from this build; rebuild with scripts/build-android.sh.",
+                null,
+            )
+            return
+        }
+        // OOM pre-flight before any whisper.cpp/ggml allocation: ggml's C++
+        // `operator new` failure aborts the process (SIGABRT) with no
+        // catchable exception, so an under-backed device must be refused up
+        // front with a recoverable error instead.
+        val peakMb = MemoryGuard.estimatedWhisperPeakMb(model.length())
+        if (MemoryGuard.wouldExceedMemoryBudget(this, peakMb)) {
+            wav.delete()
+            result.error(
+                "insufficient_memory",
+                "Not enough free memory for offline transcription (~$peakMb MB needed). " +
+                    "Close other apps and try again.",
+                null,
+            )
+            return
+        }
 
-        Thread {
-            try {
-                // The native library exports the JNI symbol for VoiceNativeBridge.
-                // Use that class consistently; VoiceNative previously referenced a
-                // different library/symbol pair and always returned null.
-                val text = VoiceNativeBridge.getInstance().transcribeWav(
-                    wav.absolutePath,
-                    model.absolutePath
-                )
-                wav.delete()
-                if (text == null) {
-                    runOnUiThread {
-                        result.error("transcription_failed", "Offline Whisper transcription failed.", null)
-                    }
+        // Native C/C++ aborts cannot be caught in this process. Run Whisper
+        // in :inference so a SIGABRT/SIGSEGV only kills the worker process and
+        // leaves the Flutter/UI process alive.
+        startNativeInference(
+            kind = NativeInferenceService.KIND_VOICE,
+            path = wav.absolutePath,
+            model = model.absolutePath,
+            timeoutMs = 180_000L,
+            cleanup = wav,
+            result = result,
+        )
+    }
+
+    private fun startNativeInference(
+        kind: String,
+        path: String,
+        model: String?,
+        timeoutMs: Long,
+        cleanup: java.io.File,
+        result: MethodChannel.Result,
+    ) {
+        val completed = AtomicBoolean(false)
+        val receiver = object : ResultReceiver(mainHandler) {
+            override fun onReceiveResult(resultCode: Int, resultData: Bundle?) {
+                if (!completed.compareAndSet(false, true)) return
+                mainHandler.removeCallbacksAndMessages(this)
+                cleanup.delete()
+                if (resultCode == NativeInferenceService.RESULT_OK) {
+                    result.success(resultData?.getString("text") ?: "")
                 } else {
-                    runOnUiThread { result.success(text) }
+                    result.error(
+                        if (kind == NativeInferenceService.KIND_VOICE) {
+                            "transcription_failed"
+                        } else {
+                            "ocr_failed"
+                        },
+                        resultData?.getString("message") ?: "Offline inference failed.",
+                        null,
+                    )
                 }
-            } catch (e: Exception) {
-                wav.delete()
-                runOnUiThread { result.error("transcription_failed", e.message, null) }
             }
-        }.start()
+        }
+
+        val timeout = Runnable {
+            if (!completed.compareAndSet(false, true)) return@Runnable
+            cleanup.delete()
+            result.error(
+                if (kind == NativeInferenceService.KIND_VOICE) {
+                    "transcription_timeout"
+                } else {
+                    "ocr_timeout"
+                },
+                "The native inference worker did not respond. The worker process may have been terminated by Android; the main app remains available.",
+                null,
+            )
+        }
+
+        try {
+            val intent = Intent(this, NativeInferenceService::class.java).apply {
+                action = NativeInferenceService.ACTION_RUN
+                putExtra(NativeInferenceService.EXTRA_KIND, kind)
+                putExtra(NativeInferenceService.EXTRA_PATH, path)
+                putExtra(NativeInferenceService.EXTRA_MODEL, model)
+                putExtra(NativeInferenceService.EXTRA_RECEIVER, receiver)
+            }
+            startService(intent)
+            mainHandler.postDelayed(timeout, timeoutMs)
+        } catch (t: Throwable) {
+            cleanup.delete()
+            result.error(
+                if (kind == NativeInferenceService.KIND_VOICE) {
+                    "transcription_failed"
+                } else {
+                    "ocr_failed"
+                },
+                t.message ?: "Could not start the native inference worker.",
+                null,
+            )
+        }
     }
 
     override fun onDestroy() {
         voiceRecorder.cancel()
         offlineOcr.release()
+        // Stop accepting new inference work; running jobs finish or are
+        // cancelled rather than leaking threads across activity recreation.
+        inferenceExecutor.shutdownNow()
         pendingVoiceStartResult?.error(
             "activity_destroyed",
             "Voice permission request was interrupted by closing the activity.",
@@ -443,28 +547,37 @@ class MainActivity : FlutterActivity() {
                     result.success(null)
                     return
                 }
-                Thread {
+                inferenceExecutor.execute {
                     val image = java.io.File.createTempFile("loose-ends-ocr-", ".image", cacheDir)
                     try {
                         contentResolver.openInputStream(uri).use { input ->
                             if (input == null) throw IllegalStateException("Could not read the selected image.")
-                            java.io.FileOutputStream(image).use { output -> input.copyTo(output, 1024 * 1024) }
+                            java.io.FileOutputStream(image).use { output ->
+                                input.copyTo(output, 1024 * 1024)
+                            }
                         }
-                        val text = offlineOcr.recognize(image)
-                        image.delete()
-                        runOnUiThread { result.success(text) }
+                        // Do not run ONNX/OpenCV in the UI process. A native abort
+                        // inside ORT/OpenCV is otherwise fatal to the whole app.
+                        startNativeInference(
+                            kind = NativeInferenceService.KIND_OCR,
+                            path = image.absolutePath,
+                            model = null,
+                            timeoutMs = 120_000L,
+                            cleanup = image,
+                            result = result,
+                        )
                     } catch (t: Throwable) {
                         image.delete()
-                        android.util.Log.e("MainActivity", "Screenshot OCR failed", t)
+                        android.util.Log.e("MainActivity", "Preparing screenshot OCR failed", t)
                         runOnUiThread {
                             result.error(
                                 "ocr_failed",
-                                t.message ?: "On-device OCR failed.",
+                                t.message ?: "Could not prepare the screenshot for OCR.",
                                 null,
                             )
                         }
                     }
-                }.start()
+                }
             }
             customModelPickRequestCode -> {
                 val result = pendingCustomModelResult
@@ -475,7 +588,7 @@ class MainActivity : FlutterActivity() {
                     result.success(null)
                     return
                 }
-                Thread {
+                inferenceExecutor.execute {
                     try {
                         val imported = ModelDownloadManager.importCustomModel(this, uri)
                         runOnUiThread { result.success(imported) }
@@ -484,7 +597,7 @@ class MainActivity : FlutterActivity() {
                             result.error("model_import_failed", e.message, null)
                         }
                     }
-                }.start()
+                }
             }
             else -> super.onActivityResult(requestCode, resultCode, data)
         }

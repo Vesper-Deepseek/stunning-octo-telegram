@@ -19,6 +19,11 @@
         <receiver
             android:name=".ReminderReceiver"
             android:exported="false" />
+        <service
+            android:name=".NativeInferenceService"
+            android:exported="false"
+            android:process=":inference"
+            android:stopWithTask="true" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

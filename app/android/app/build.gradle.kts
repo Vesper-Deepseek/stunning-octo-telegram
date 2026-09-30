@@ -27,6 +27,7 @@ android {
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+
         // Disable unit tests to avoid configuration issues
         testApplicationId = "com.looseends.loose_ends.test"
     }

@@ -9,8 +9,10 @@
 //! - a circuit breaker falls back to the rule-based extractor when the
 //!   model is slow, unavailable, or produces unusable output.
 
+use std::fs::File;
+use std::io::Read;
 use std::num::NonZeroU32;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::pin::pin;
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
@@ -183,9 +185,55 @@ pub fn extract_neural_with_model_path(
         }
         Err(mpsc::RecvTimeoutError::Timeout) => NeuralOutcome::TimedOut,
         Err(mpsc::RecvTimeoutError::Disconnected) => {
+            // The inference thread panicked (ggml/llama abort paths surface as
+            // Rust panics inside the binding). Report Unavailable so the
+            // circuit breaker falls back to rules instead of crashing.
+            handle.join().ok();
             NeuralOutcome::Unavailable("inference thread died".into())
         }
     }
+}
+
+/// Free memory reported by the kernel (`MemAvailable` from /proc/meminfo),
+/// in KiB. Returns None where procfs is unavailable so callers fail open.
+fn mem_available_kb() -> Option<u64> {
+    let mut buf = String::new();
+    File::open("/proc/meminfo")
+        .ok()
+        .and_then(|mut f| f.read_to_string(&mut buf).ok())?;
+    for line in buf.lines() {
+        if let Some(rest) = line.strip_prefix("MemAvailable:") {
+            return rest
+                .trim_end()
+                .split_whitespace()
+                .next()
+                .and_then(|v| v.parse::<u64>().ok());
+        }
+    }
+    None
+}
+
+/// Verify a GGUF file's magic and minimum size before llama.cpp loads it.
+/// llama_model_load aborts the process (uncatchable SIGABRT) on foreign or
+/// truncated files, so this pre-flight check prevents force-closes after a
+/// corrupted or partially written model download.
+fn verify_gguf_file(path: &Path) -> Result<(), String> {
+    let meta = std::fs::metadata(path).map_err(|e| format!("model stat: {e}"))?;
+    if !meta.is_file() || meta.len() < 24 {
+        return Err("model file is missing or too small to be a valid GGUF".into());
+    }
+    let mut magic = [0u8; 4];
+    File::open(path)
+        .map_err(|e| format!("model open: {e}"))?
+        .read_exact(&mut magic)
+        .map_err(|e| format!("model header read: {e}"))?;
+    if &magic != b"GGUF" {
+        return Err(format!(
+            "model file is not GGUF (magic {:?}); re-download the model",
+            String::from_utf8_lossy(&magic)
+        ));
+    }
+    Ok(())
 }
 
 fn run_inference(model_path: &str, prompt: &str, max_tokens: u32) -> Result<String, String> {
@@ -197,6 +245,13 @@ fn run_inference(model_path: &str, prompt: &str, max_tokens: u32) -> Result<Stri
     use llama_cpp_2::sampling::LlamaSampler;
 
     let backend = LlamaBackend::init().map_err(|e| format!("backend init: {e:?}"))?;
+
+    // GGUF magic check before llama.cpp touches the file: llama_model_load
+    // calls GGML_ABORT (SIGABRT, uncatchable from Rust) on truncated or
+    // foreign files, which previously force-closed the app after a corrupt
+    // download even though Kotlin had hash-verified it earlier.
+    verify_gguf_file(Path::new(model_path))?;
+
     let model_params = pin!(LlamaModelParams::default());
     let model = llama_cpp_2::model::LlamaModel::load_from_file(
         &backend,
@@ -205,10 +260,19 @@ fn run_inference(model_path: &str, prompt: &str, max_tokens: u32) -> Result<Stri
     )
     .map_err(|e| format!("model load: {e:?}"))?;
 
+    // 6 threads + 4096-token KV cache peaks above ~700 MB for mid-size
+    // quantizations and gets the process OOM-killed on 3-4 GB phones.
+    // Scale threads and context with cores and available RAM instead.
+    let mem_available_mb = mem_available_kb().unwrap_or(u64::MAX / 1024) / 1024;
+    let n_threads = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(2)
+        .min(if mem_available_mb < 3_072 { 2 } else { 4 });
+    let n_ctx: u32 = if mem_available_mb < 3_072 { 1024 } else { 2048 };
     let ctx_params = LlamaContextParams::default()
-        .with_n_ctx(Some(NonZeroU32::new(4096).ok_or("bad ctx")?))
-        .with_n_threads(6)
-        .with_n_threads_batch(6);
+        .with_n_ctx(Some(NonZeroU32::new(n_ctx).ok_or("bad ctx")?))
+        .with_n_threads(n_threads as i32)
+        .with_n_threads_batch(n_threads as i32);
     let mut ctx = model
         .new_context(&backend, ctx_params)
         .map_err(|e| e.to_string())?;

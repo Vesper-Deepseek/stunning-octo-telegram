@@ -10,18 +10,26 @@ package com.looseends.loose_ends
 class VoiceNativeBridge private constructor() {
     fun transcribeWav(wavPath: String, modelPath: String): String? {
         if (wavPath.isBlank() || modelPath.isBlank()) return null
+        // catch(Throwable), not just Exception/UnsatisfiedLinkError: a failed
+        // System.loadLibrary in the companion init leaves every external call
+        // throwing UnsatisfiedLinkError at invocation time, and native bridge
+        // failures must degrade to "voice unavailable" instead of crashing.
         return try {
             looseEndsTranscribeWav(wavPath, modelPath)
-        } catch (e: UnsatisfiedLinkError) {
-            android.util.Log.e("VoiceNativeBridge", "Whisper native library unavailable", e)
+        } catch (t: Throwable) {
+            android.util.Log.e("VoiceNativeBridge", "Whisper native call failed", t)
             null
         }
     }
 
     companion object {
+        @Volatile
+        private var libraryLoaded = false
+
         init {
             try {
                 System.loadLibrary("loose_ends_voice")
+                libraryLoaded = true
             } catch (e: UnsatisfiedLinkError) {
                 android.util.Log.e(
                     "VoiceNativeBridge",
@@ -43,5 +51,9 @@ class VoiceNativeBridge private constructor() {
             wavPath: String,
             modelPath: String
         ): String?
+
+        /** True when libloose_ends_voice.so was loaded successfully. */
+        @JvmStatic
+        fun isAvailable(): Boolean = libraryLoaded
     }
 }
