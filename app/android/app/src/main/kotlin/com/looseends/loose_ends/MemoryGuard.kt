@@ -26,13 +26,12 @@ object MemoryGuard {
         val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
         val info = ActivityManager.MemoryInfo()
         am?.getMemoryInfo(info)
-        // `memInfo` is a KB-per-key map; MemAvailable is the accurate
-        // "reclaimable" figure (free + page cache the kernel can evict).
-        val availKb = info.memInfo?.get("MemAvailable")?.toLong()
+        // ActivityManager exposes available system memory directly. MemoryInfo
+        // has no memInfo map; use availMem and the low-memory signal instead.
         when {
-            availKb != null && availKb > 0 -> availKb / 1024L
             info.lowMemory -> 0L
-            else -> if (info.availMem > 0) info.availMem / (1024L * 1024L) else null
+            info.availMem > 0 -> info.availMem / (1024L * 1024L)
+            else -> null
         }
     } catch (t: Throwable) {
         Log.w(TAG, "Could not read system memory status", t)
