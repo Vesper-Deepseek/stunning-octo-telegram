@@ -271,8 +271,8 @@ fn run_inference(model_path: &str, prompt: &str, max_tokens: u32) -> Result<Stri
     let n_ctx: u32 = if mem_available_mb < 3_072 { 1024 } else { 2048 };
     let ctx_params = LlamaContextParams::default()
         .with_n_ctx(Some(NonZeroU32::new(n_ctx).ok_or("bad ctx")?))
-        .with_n_threads(n_threads)
-        .with_n_threads_batch(n_threads);
+        .with_n_threads(n_threads as i32)
+        .with_n_threads_batch(n_threads as i32);
     let mut ctx = model
         .new_context(&backend, ctx_params)
         .map_err(|e| e.to_string())?;
