@@ -7,12 +7,16 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.ResultReceiver
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -29,6 +33,7 @@ class MainActivity : FlutterActivity() {
     private val offlineOcr by lazy { OfflineOcrEngine(applicationContext) }
     private val voiceRecorder by lazy { VoiceRecorder(cacheDir) }
     private var pendingVoiceStartResult: MethodChannel.Result? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     // Single-worker executor for all native AI inference (llama.cpp,
     // whisper.cpp, ONNX/OpenCV). Replaces the previous raw `Thread{}.start()`
@@ -397,40 +402,84 @@ class MainActivity : FlutterActivity() {
             return
         }
 
-        inferenceExecutor.execute {
-            try {
-                // OCR keeps native ONNX/OpenCV sessions resident for reuse. Release
-                // them before Whisper so the two native model sets never overlap.
-                offlineOcr.release()
-                // The native library exports JNI symbols for both VoiceNativeBridge
-                // and VoiceNative; use the bridge class consistently.
-                val text = VoiceNativeBridge.getInstance().transcribeWav(
-                    wav.absolutePath,
-                    model.absolutePath
-                )
-                wav.delete()
-                if (text == null) {
-                    runOnUiThread {
-                        result.error("transcription_failed", "Offline Whisper transcription failed.", null)
-                    }
+        // Native C/C++ aborts cannot be caught in this process. Run Whisper
+        // in :inference so a SIGABRT/SIGSEGV only kills the worker process and
+        // leaves the Flutter/UI process alive.
+        startNativeInference(
+            kind = NativeInferenceService.KIND_VOICE,
+            path = wav.absolutePath,
+            model = model.absolutePath,
+            timeoutMs = 180_000L,
+            cleanup = wav,
+            result = result,
+        )
+    }
+
+    private fun startNativeInference(
+        kind: String,
+        path: String,
+        model: String?,
+        timeoutMs: Long,
+        cleanup: java.io.File,
+        result: MethodChannel.Result,
+    ) {
+        val completed = AtomicBoolean(false)
+        val receiver = object : ResultReceiver(mainHandler) {
+            override fun onReceiveResult(resultCode: Int, resultData: Bundle?) {
+                if (!completed.compareAndSet(false, true)) return
+                mainHandler.removeCallbacksAndMessages(this)
+                cleanup.delete()
+                if (resultCode == NativeInferenceService.RESULT_OK) {
+                    result.success(resultData?.getString("text") ?: "")
                 } else {
-                    runOnUiThread { result.success(text) }
-                }
-            } catch (t: Throwable) {
-                // Throwable, not Exception: UnsatisfiedLinkError and any other
-                // bridge failure must surface as a Dart-side error, never as an
-                // uncaught exception on the worker thread (which kills the app).
-                wav.delete()
-                android.util.Log.e("MainActivity", "Whisper transcription crashed", t)
-                runOnUiThread {
-                    val message = when (t) {
-                        is OutOfMemoryError ->
-                            "Not enough memory to run Whisper on this device. Close other apps and retry."
-                        else -> t.message ?: "Offline Whisper transcription failed."
-                    }
-                    result.error("transcription_failed", message, null)
+                    result.error(
+                        if (kind == NativeInferenceService.KIND_VOICE) {
+                            "transcription_failed"
+                        } else {
+                            "ocr_failed"
+                        },
+                        resultData?.getString("message") ?: "Offline inference failed.",
+                        null,
+                    )
                 }
             }
+        }
+
+        val timeout = Runnable {
+            if (!completed.compareAndSet(false, true)) return@Runnable
+            cleanup.delete()
+            result.error(
+                if (kind == NativeInferenceService.KIND_VOICE) {
+                    "transcription_timeout"
+                } else {
+                    "ocr_timeout"
+                },
+                "The native inference worker did not respond. The worker process may have been terminated by Android; the main app remains available.",
+                null,
+            )
+        }
+
+        try {
+            val intent = Intent(this, NativeInferenceService::class.java).apply {
+                action = NativeInferenceService.ACTION_RUN
+                putExtra(NativeInferenceService.EXTRA_KIND, kind)
+                putExtra(NativeInferenceService.EXTRA_PATH, path)
+                putExtra(NativeInferenceService.EXTRA_MODEL, model)
+                putExtra(NativeInferenceService.EXTRA_RECEIVER, receiver)
+            }
+            startService(intent)
+            mainHandler.postDelayed(timeout, timeoutMs)
+        } catch (t: Throwable) {
+            cleanup.delete()
+            result.error(
+                if (kind == NativeInferenceService.KIND_VOICE) {
+                    "transcription_failed"
+                } else {
+                    "ocr_failed"
+                },
+                t.message ?: "Could not start the native inference worker.",
+                null,
+            )
         }
     }
 
@@ -503,26 +552,27 @@ class MainActivity : FlutterActivity() {
                     try {
                         contentResolver.openInputStream(uri).use { input ->
                             if (input == null) throw IllegalStateException("Could not read the selected image.")
-                            java.io.FileOutputStream(image).use { output -> input.copyTo(output, 1024 * 1024) }
-                        }
-                        val text = offlineOcr.recognize(image)
-                        image.delete()
-                        runOnUiThread { result.success(text) }
-                    } catch (t: Throwable) {
-                        // Throwable: OutOfMemoryError from ONNX/OpenCV and any
-                        // native-side Java exception must become a Dart error,
-                        // not an uncaught worker-thread crash.
-                        image.delete()
-                        android.util.Log.e("MainActivity", "Screenshot OCR failed", t)
-                        runOnUiThread {
-                            val message = when (t) {
-                                is OutOfMemoryError ->
-                                    "Not enough memory to run OCR on this image. Free device memory and retry."
-                                else -> t.message ?: "On-device OCR failed."
+                            java.io.FileOutputStream(image).use { output ->
+                                input.copyTo(output, 1024 * 1024)
                             }
+                        }
+                        // Do not run ONNX/OpenCV in the UI process. A native abort
+                        // inside ORT/OpenCV is otherwise fatal to the whole app.
+                        startNativeInference(
+                            kind = NativeInferenceService.KIND_OCR,
+                            path = image.absolutePath,
+                            model = null,
+                            timeoutMs = 120_000L,
+                            cleanup = image,
+                            result = result,
+                        )
+                    } catch (t: Throwable) {
+                        image.delete()
+                        android.util.Log.e("MainActivity", "Preparing screenshot OCR failed", t)
+                        runOnUiThread {
                             result.error(
                                 "ocr_failed",
-                                message,
+                                t.message ?: "Could not prepare the screenshot for OCR.",
                                 null,
                             )
                         }
