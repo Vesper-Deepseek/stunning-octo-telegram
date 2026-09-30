@@ -74,6 +74,10 @@ class OfflineOcrEngine(private val context: Context) {
             }
         } finally {
             bitmap.recycle()
+            // OCR sessions are native-memory heavy. Do not keep ONNX graphs and
+            // OpenCV state resident after a capture; the next inference reloads
+            // the verified models and avoids stacking OCR + Whisper RSS.
+            release()
         }
     }
 
