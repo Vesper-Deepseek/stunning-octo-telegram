@@ -27,14 +27,6 @@ android {
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        ndk {
-            // Only arm64-v8a currently ships prebuilt Rust .so files in
-            // src/main/jniLibs. Without this filter, installs on other ABIs
-            // get an APK whose System.loadLibrary calls fail and whose first
-            // voice/OCR trigger crashes; restrict to the ABI we actually
-            // build so packaging is honest about what is available.
-            abiFilters += listOf("arm64-v8a")
-        }
 
         // Disable unit tests to avoid configuration issues
         testApplicationId = "com.looseends.loose_ends.test"
